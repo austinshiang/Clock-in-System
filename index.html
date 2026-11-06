@@ -181,14 +181,14 @@
 
         <!-- 核心打卡按鈕 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <button onclick="doClockAction('clockIn')" class="relative group overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 text-white p-4 sm:p-5 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1">
+          <button id="btnClockIn" onclick="doClockAction('clockIn')" class="relative group overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 text-white p-4 sm:p-5 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1">
             <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
             <i class="fa-solid fa-fingerprint text-3xl sm:text-4xl mb-1 relative z-10"></i>
             <span class="font-extrabold text-base sm:text-lg tracking-wider relative z-10">上班打卡</span>
             <span class="text-[10px] sm:text-xs text-emerald-100 font-medium relative z-10">(驗證 GPS 位置)</span>
           </button>
           
-          <button onclick="doClockAction('clockOut')" class="relative group overflow-hidden bg-gradient-to-br from-rose-400 to-rose-600 text-white p-4 sm:p-5 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1">
+          <button id="btnClockOut" onclick="doClockAction('clockOut')" class="relative group overflow-hidden bg-gradient-to-br from-rose-400 to-rose-600 text-white p-4 sm:p-5 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1">
             <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
             <i class="fa-solid fa-house-person-leave text-3xl sm:text-4xl mb-1 relative z-10"></i>
             <span class="font-extrabold text-base sm:text-lg tracking-wider relative z-10">下班打卡</span>
@@ -433,7 +433,9 @@
     // GPS 目標設定 (預設為中壢姜駒車業附近)
     var companyLat = parseFloat(localStorage.getItem("att_app_gps_lat")) || 24.9535;
     var companyLng = parseFloat(localStorage.getItem("att_app_gps_lng")) || 121.2250;
-    var companyRadius = parseInt(localStorage.getItem("att_app_gps_radius")) || 150;
+    
+    var storedRadius = parseInt(localStorage.getItem("att_app_gps_radius"));
+    var companyRadius = (!isNaN(storedRadius) && storedRadius > 0) ? storedRadius : 200; // 預設恢復為 200m 防呆
 
     // 快取與狀態
     var CACHE_KEY_ACCOUNTS = "att_app_accounts_cache_v31";
@@ -670,6 +672,7 @@
       if (!navigator.geolocation) {
         hideLoading();
         showCustomAlert("錯誤", "您的瀏覽器不支援定位功能，無法打卡", "error");
+        actionCallback(false);
         return;
       }
 
@@ -692,15 +695,17 @@
 
           if (validLoc) {
             // 在任一範圍內，執行打卡
-            actionCallback(); 
+            actionCallback(true); 
           } else {
             hideLoading();
             showCustomAlert("打卡失敗", `您目前距離最近的打卡點還有 ${nearestDist} 公尺，已超出允許範圍，無法打卡。`, "error");
+            actionCallback(false);
           }
         },
         function(err) {
           hideLoading();
           showCustomAlert("定位失敗", "請確保已開啟手機 GPS 並允許網頁取用位置權限。", "error");
+          actionCallback(false);
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
@@ -761,12 +766,18 @@
           if(!cleanP) return;
           var coords = cleanP.split(",");
           if (coords.length >= 2) {
-            allowedLocations.push({
-              lat: parseFloat(coords[0]),
-              lng: parseFloat(coords[1]),
-              radius: coords.length >= 3 ? parseInt(coords[2]) : companyRadius,
-              name: coords.length >= 4 ? coords[3] : ("打卡點 " + (idx + 1))
-            });
+            var pLat = parseFloat(coords[0]);
+            var pLng = parseFloat(coords[1]);
+            var pRad = coords.length >= 3 ? parseInt(coords[2], 10) : NaN;
+            
+            if (!isNaN(pLat) && !isNaN(pLng)) {
+              allowedLocations.push({
+                lat: pLat,
+                lng: pLng,
+                radius: (!isNaN(pRad) && pRad > 0) ? pRad : companyRadius,
+                name: coords.length >= 4 ? coords[3] : ("打卡點 " + (idx + 1))
+              });
+            }
           }
         });
       }
@@ -789,6 +800,50 @@
       }
       renderCalendar();
       calculateMonthlyStats();
+      updateClockButtonsState();
+    }
+
+    function updateClockButtonsState() {
+      if (!currentUser) return;
+      var todayStr = normalizeDate(new Date());
+      var userRecords = allAttendance.filter(r => r.username === currentUser.username);
+      var todayRec = userRecords.find(r => normalizeDate(r.date) === todayStr);
+
+      var hasClockIn = todayRec && todayRec.clockIn;
+      var hasClockOut = todayRec && todayRec.clockOut;
+
+      var btnIn = document.getElementById("btnClockIn");
+      var btnOut = document.getElementById("btnClockOut");
+
+      if (btnIn) {
+        if (hasClockIn) {
+          btnIn.onclick = null;
+          btnIn.className = "relative bg-slate-200 text-slate-500 p-4 sm:p-5 rounded-2xl shadow-sm cursor-not-allowed flex flex-col items-center justify-center gap-1";
+          btnIn.innerHTML = `<i class="fa-solid fa-check-circle text-3xl sm:text-4xl mb-1"></i><span class="font-extrabold text-base sm:text-lg tracking-wider">已上班</span><span class="text-[10px] sm:text-xs font-bold">(${todayRec.clockIn})</span>`;
+        } else {
+          btnIn.onclick = function() { doClockAction('clockIn'); };
+          btnIn.className = "relative group overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 text-white p-4 sm:p-5 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1";
+          btnIn.innerHTML = `<div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+            <i class="fa-solid fa-fingerprint text-3xl sm:text-4xl mb-1 relative z-10"></i>
+            <span class="font-extrabold text-base sm:text-lg tracking-wider relative z-10">上班打卡</span>
+            <span class="text-[10px] sm:text-xs text-emerald-100 font-medium relative z-10">(驗證 GPS 位置)</span>`;
+        }
+      }
+
+      if (btnOut) {
+        if (hasClockOut) {
+          btnOut.onclick = null;
+          btnOut.className = "relative bg-slate-200 text-slate-500 p-4 sm:p-5 rounded-2xl shadow-sm cursor-not-allowed flex flex-col items-center justify-center gap-1";
+          btnOut.innerHTML = `<i class="fa-solid fa-check-circle text-3xl sm:text-4xl mb-1"></i><span class="font-extrabold text-base sm:text-lg tracking-wider">已下班</span><span class="text-[10px] sm:text-xs font-bold">(${todayRec.clockOut})</span>`;
+        } else {
+          btnOut.onclick = function() { doClockAction('clockOut'); };
+          btnOut.className = "relative group overflow-hidden bg-gradient-to-br from-rose-400 to-rose-600 text-white p-4 sm:p-5 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1";
+          btnOut.innerHTML = `<div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+            <i class="fa-solid fa-house-person-leave text-3xl sm:text-4xl mb-1 relative z-10"></i>
+            <span class="font-extrabold text-base sm:text-lg tracking-wider relative z-10">下班打卡</span>
+            <span class="text-[10px] sm:text-xs text-rose-100 font-medium relative z-10">(驗證 GPS 位置)</span>`;
+        }
+      }
     }
 
     function populateEmployeeDropdown() {
@@ -934,23 +989,35 @@
 
     // --- 打卡與請假動作 ---
     function doClockAction(type) {
-      performGpsAction(function() {
+      var btnTarget = type === 'clockIn' ? document.getElementById("btnClockIn") : document.getElementById("btnClockOut");
+      if (btnTarget) {
+          btnTarget.style.pointerEvents = "none";
+          btnTarget.classList.add("opacity-75");
+      }
+
+      performGpsAction(function(isSuccess) {
+        if (!isSuccess) {
+          if (btnTarget) {
+              btnTarget.style.pointerEvents = "auto";
+              btnTarget.classList.remove("opacity-75");
+          }
+          return;
+        }
+
         showLoading("打卡傳輸中...");
-        
         var msgText = (type === 'clockIn') ? "上班" : "下班";
-        
-        // 直接調用 Line 關鍵字相同邏輯 (透過傳送虛擬的 LINE Payload)
-        // 因為後端是接收 LINE Webhook，此處為 Web 版專用直接改寫成向表單送指令
-        // 我們直接構建一個假 Webhook 送給 doPost，或是在 doGet 增加 endpoint。
-        // 最好的做法是使用 Web 專用表單送出（利用 Google Form 或增加 doGet 參數）
-        // 為了相容 V2.4 系統，這裡提示使用者在網頁上直接將備註欄轉送為考勤
-        
-        // 注意：基於先前提供的 Code.gs，打卡是透過 LINE webhook。
-        // 為了純網頁能運作，建議在 GAS 增加 doPost 接收 json 或利用 LINE LIFF。
-        // 這裡我們暫時提示已觸發，並假性更新本地紀錄（實際專案需在 Code.gs 中擴展 `action=webClockIn`）
         
         setTimeout(() => {
           hideLoading();
+          
+          // 網頁版強制視覺鎖定 (防止使用者重複點按)
+          var nowTimeStr = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+          if(btnTarget) {
+              btnTarget.onclick = null;
+              btnTarget.className = "relative bg-slate-200 text-slate-500 p-4 sm:p-5 rounded-2xl shadow-sm cursor-not-allowed flex flex-col items-center justify-center gap-1";
+              btnTarget.innerHTML = `<i class="fa-solid fa-check-circle text-3xl sm:text-4xl mb-1"></i><span class="font-extrabold text-base sm:text-lg tracking-wider">已${msgText}</span><span class="text-[10px] sm:text-xs font-bold">(${nowTimeStr})</span>`;
+          }
+
           showCustomAlert("系統提示", `目前網頁版 ${msgText} 驗證成功！(若要實際寫入 Google Sheets，請確保您的 Apps Script 擁有 action=webClockIn API，或透過 LINE 發送)`, "success");
         }, 800);
       });
@@ -1113,7 +1180,10 @@
     function saveSystemSettings() {
       companyLat = parseFloat(document.getElementById("cfgCompanyLat").value) || 24.9535;
       companyLng = parseFloat(document.getElementById("cfgCompanyLng").value) || 121.2250;
-      companyRadius = parseInt(document.getElementById("cfgCompanyRadius").value) || 150;
+      
+      var inputRadius = parseInt(document.getElementById("cfgCompanyRadius").value);
+      companyRadius = (!isNaN(inputRadius) && inputRadius > 0) ? inputRadius : 200; // 強制防呆至少為數值
+      
       var newUrl = document.getElementById("customGasUrlInput").value.trim();
 
       localStorage.setItem("att_app_gps_lat", companyLat);
