@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>雲端打卡考勤管理系統 V2.4</title>
+  <title>雲端打卡考勤管理系統 V3.1</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -63,7 +63,7 @@
         <i class="fa-solid fa-fingerprint text-3xl text-indigo-600"></i>
       </div>
       <h2 class="text-2xl font-black text-slate-800 mb-2 tracking-tight">系統登入</h2>
-      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤管理系統 V2.4</p>
+      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤管理系統 V3.1</p>
       
       <div class="space-y-4">
         <div class="relative">
@@ -427,8 +427,8 @@
   <!-- Javascript 核心邏輯 -->
   <script>
     // --- 全局變數與設定 ---
-    var defaultGASUrl = "https://script.google.com/macros/s/AKfycbzfNaLkV2em1FkV5Fe8j83pz4ZzivRGGKOpLHoLN9vEKWITE_bTtsJpyBhX9JDY4QSO/exec";
-    var gasUrl = localStorage.getItem("att_app_custom_gas_url") || defaultGASUrl;
+    var defaultGASUrl = "https://script.google.com/macros/s/AKfycbwIaUMTtKAptWPXT7RYnvhmKcf3uxEkmmhsUqdU4ju6OK9AmenOVOqvbvsaLOnYrJk/exec";
+    var gasUrl = localStorage.getItem("att_app_custom_gas_url_v31") || defaultGASUrl;
     
     // GPS 目標設定 (預設為中壢姜駒車業附近)
     var companyLat = parseFloat(localStorage.getItem("att_app_gps_lat")) || 24.9535;
@@ -436,10 +436,10 @@
     var companyRadius = parseInt(localStorage.getItem("att_app_gps_radius")) || 150;
 
     // 快取與狀態
-    var CACHE_KEY_ACCOUNTS = "att_app_accounts_cache_v24";
-    var CACHE_KEY_ATTENDANCE = "att_app_attendance_cache_v24";
-    var CACHE_KEY_HOLIDAYS = "att_app_holidays_cache_v24";
-    var CACHE_KEY_USER = "att_app_current_user_v24";
+    var CACHE_KEY_ACCOUNTS = "att_app_accounts_cache_v31";
+    var CACHE_KEY_ATTENDANCE = "att_app_attendance_cache_v31";
+    var CACHE_KEY_HOLIDAYS = "att_app_holidays_cache_v31";
+    var CACHE_KEY_USER = "att_app_current_user_v31";
 
     var allAccounts = [];
     var allAttendance = [];
@@ -451,13 +451,14 @@
 
     // Leaflet 地圖變數
     var map = null;
-    var companyMarker = null;
-    var companyFenceCircle = null;
+    var companyMarkers = [];
+    var companyFenceCircles = [];
     var userMarker = null;
     var userAccCircle = null;
     var lastUserLat = null;
     var lastUserLng = null;
     var isInGpsRange = false;
+    var allowedLocations = [];
 
     // --- 初始化 ---
     window.onload = function() {
@@ -502,34 +503,51 @@
       if (map) return; // 避免重複初始化
       
       try {
-        map = L.map("liveMap").setView([companyLat, companyLng], 16);
+        var startLat = allowedLocations.length > 0 ? allowedLocations[0].lat : companyLat;
+        var startLng = allowedLocations.length > 0 ? allowedLocations[0].lng : companyLng;
+
+        map = L.map("liveMap").setView([startLat, startLng], 16);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
           attribution: '&copy; OpenStreetMap'
         }).addTo(map);
 
-        // 畫目標
-        var companyIcon = L.divIcon({
-          className: 'custom-div-icon',
-          html: `<div style="background-color: #ef4444; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 14px;"><i class="fa-solid fa-building"></i></div>`,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16]
-        });
-
-        companyMarker = L.marker([companyLat, companyLng], { icon: companyIcon }).addTo(map)
-          .bindPopup(`<b>🏢 打卡目標點</b><br>允許半徑：${companyRadius} 公尺`);
-
-        companyFenceCircle = L.circle([companyLat, companyLng], {
-          color: "#f59e0b",
-          fillColor: "#fbbf24",
-          fillOpacity: 0.15,
-          radius: companyRadius
-        }).addTo(map);
-
+        drawCompanyLocations();
         updateCurrentPositionOnly(); // 取得並畫出藍點
       } catch (err) {
         console.error("Leaflet Init Error:", err);
       }
+    }
+
+    function drawCompanyLocations() {
+      if (!map) return;
+      
+      // 清除舊的目標
+      companyMarkers.forEach(m => map.removeLayer(m));
+      companyFenceCircles.forEach(c => map.removeLayer(c));
+      companyMarkers = [];
+      companyFenceCircles = [];
+
+      var companyIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color: #ef4444; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 14px;"><i class="fa-solid fa-building"></i></div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+
+      allowedLocations.forEach(loc => {
+        var marker = L.marker([loc.lat, loc.lng], { icon: companyIcon }).addTo(map)
+          .bindPopup(`<b>🏢 ${loc.name}</b><br>允許半徑：${loc.radius} 公尺`);
+        var circle = L.circle([loc.lat, loc.lng], {
+          color: "#f59e0b",
+          fillColor: "#fbbf24",
+          fillOpacity: 0.15,
+          radius: loc.radius
+        }).addTo(map);
+
+        companyMarkers.push(marker);
+        companyFenceCircles.push(circle);
+      });
     }
 
     function renderUserMapLocation(lat, lng, accuracy) {
@@ -576,9 +594,9 @@
     }
 
     function centerMapOnCompany() {
-      if (map) {
-        map.setView([companyLat, companyLng], 16);
-        if (companyMarker) companyMarker.openPopup();
+      if (map && allowedLocations.length > 0) {
+        map.setView([allowedLocations[0].lat, allowedLocations[0].lng], 16);
+        if (companyMarkers.length > 0) companyMarkers[0].openPopup();
       }
     }
 
@@ -602,17 +620,27 @@
           var uLng = pos.coords.longitude;
           var accuracy = pos.coords.accuracy;
 
-          var dist = calculateDistanceMeters(uLat, uLng, companyLat, companyLng);
-          isInGpsRange = (dist <= companyRadius);
+          var nearestDist = Infinity;
+          var validLoc = null;
+
+          allowedLocations.forEach(loc => {
+            var dist = calculateDistanceMeters(uLat, uLng, loc.lat, loc.lng);
+            if (dist < nearestDist) nearestDist = dist;
+            if (dist <= loc.radius && !validLoc) {
+              validLoc = loc;
+            }
+          });
+
+          isInGpsRange = (validLoc !== null);
 
           if (isInGpsRange) {
             iconDiv.innerHTML = `<i class="fa-solid fa-check text-xl"></i>`;
             iconDiv.className = "w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 shadow-inner";
-            textDiv.innerHTML = `<span class="text-emerald-600">已在打卡範圍內 (距 ${dist}m)</span>`;
+            textDiv.innerHTML = `<span class="text-emerald-600">已在 <b>${validLoc.name}</b> 範圍內 (距 ${nearestDist}m)</span>`;
           } else {
             iconDiv.innerHTML = `<i class="fa-solid fa-xmark text-xl"></i>`;
             iconDiv.className = "w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-inner";
-            textDiv.innerHTML = `<span class="text-rose-600">超出打卡範圍 (距 ${dist}m)</span>`;
+            textDiv.innerHTML = `<span class="text-rose-600">超出所有打卡點範圍 (最近距 ${nearestDist}m)</span>`;
           }
           renderUserMapLocation(uLat, uLng, accuracy);
         },
@@ -651,13 +679,23 @@
           var uLng = pos.coords.longitude;
           renderUserMapLocation(uLat, uLng, pos.coords.accuracy); // 同步更新地圖
 
-          var dist = calculateDistanceMeters(uLat, uLng, companyLat, companyLng);
-          if (dist <= companyRadius) {
-            // 在範圍內，執行打卡
+          var nearestDist = Infinity;
+          var validLoc = null;
+
+          allowedLocations.forEach(loc => {
+            var dist = calculateDistanceMeters(uLat, uLng, loc.lat, loc.lng);
+            if (dist < nearestDist) nearestDist = dist;
+            if (dist <= loc.radius && !validLoc) {
+              validLoc = loc;
+            }
+          });
+
+          if (validLoc) {
+            // 在任一範圍內，執行打卡
             actionCallback(); 
           } else {
             hideLoading();
-            showCustomAlert("打卡失敗", `您目前距離公司 ${dist} 公尺，超出允許半徑 ${companyRadius} 公尺，無法打卡。`, "error");
+            showCustomAlert("打卡失敗", `您目前距離最近的打卡點還有 ${nearestDist} 公尺，已超出允許範圍，無法打卡。`, "error");
           }
         },
         function(err) {
@@ -712,6 +750,35 @@
         badge.classList.add("hidden");
         adminSelector.classList.add("hidden");
       }
+
+      // 解析個人的 GPS 打卡點設定
+      allowedLocations = [];
+      if (currentUser && currentUser.gpsLocations) {
+        // 支援使用 | 或 ; 或 " 隔開
+        var parts = currentUser.gpsLocations.split(/[\|;]/);
+        parts.forEach((p, idx) => {
+          var cleanP = p.replace(/"/g, "").trim();
+          if(!cleanP) return;
+          var coords = cleanP.split(",");
+          if (coords.length >= 2) {
+            allowedLocations.push({
+              lat: parseFloat(coords[0]),
+              lng: parseFloat(coords[1]),
+              radius: coords.length >= 3 ? parseInt(coords[2]) : companyRadius,
+              name: coords.length >= 4 ? coords[3] : ("打卡點 " + (idx + 1))
+            });
+          }
+        });
+      }
+      
+      // 若資料庫無設定，則退回使用本地預設值
+      if (allowedLocations.length === 0) {
+        allowedLocations.push({ lat: companyLat, lng: companyLng, radius: companyRadius, name: "預設打卡點" });
+      }
+
+      // 介面更新：顯示多節點或單一範圍
+      var rText = allowedLocations.length > 1 ? "多節點專屬定位" : (allowedLocations[0].radius + "m");
+      document.getElementById("txtCompanyRadiusDisplay").innerText = rText;
 
       initInteractiveMap();
     }
@@ -1055,21 +1122,19 @@
       
       if (newUrl && newUrl !== gasUrl) {
         gasUrl = newUrl;
-        localStorage.setItem("att_app_custom_gas_url", gasUrl);
+        localStorage.setItem("att_app_custom_gas_url_v31", gasUrl);
       }
 
-      document.getElementById("txtCompanyRadiusDisplay").innerText = companyRadius;
-
-      if (companyMarker) companyMarker.setLatLng([companyLat, companyLng]).getPopup().setContent(`<b>🏢 打卡目標點</b><br>允許半徑：${companyRadius} 公尺`);
-      if (companyFenceCircle) {
-        companyFenceCircle.setLatLng([companyLat, companyLng]);
-        companyFenceCircle.setRadius(companyRadius);
+      // 更新預設全域變數後，若該帳號無專屬設定，則重新載入預設
+      if (!currentUser.gpsLocations) {
+        allowedLocations = [{ lat: companyLat, lng: companyLng, radius: companyRadius, name: "預設打卡點" }];
+        document.getElementById("txtCompanyRadiusDisplay").innerText = companyRadius + "m";
+        drawCompanyLocations();
       }
-      if (map) map.setView([companyLat, companyLng], 16);
 
       closeGpsSettingsModal();
       updateCurrentPositionOnly();
-      showCustomAlert("設定完成", "GPS 定位參數與伺服器位址已儲存套用！", "success");
+      showCustomAlert("設定完成", "預設 GPS 定位參數與伺服器位址已儲存套用！", "success");
     }
 
     function openSingleLeaveModal() {
