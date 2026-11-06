@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>雲端打卡考勤管理系統 V3.3</title>
+  <title>雲端打卡考勤管理系統 V3.4</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -57,7 +57,7 @@
         <i class="fa-solid fa-fingerprint text-3xl text-indigo-600"></i>
       </div>
       <h2 class="text-2xl font-black text-slate-800 mb-2 tracking-tight">系統登入</h2>
-      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤管理系統 V3.3</p>
+      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤管理系統 V3.4</p>
       
       <div class="space-y-4">
         <div class="relative">
@@ -153,7 +153,7 @@
             </div>
             <div class="flex-1">
               <div id="gpsStatusText" class="text-sm font-bold text-slate-800">定位擷取中...</div>
-              <div class="text-[11px] text-slate-500 font-medium">打卡半徑範圍設定 <span id="txtCompanyRadiusDisplay" class="text-indigo-600 font-bold">200</span>m</div>
+              <div class="text-[11px] text-slate-500 font-medium">打卡範圍設定 <span id="txtCompanyRadiusDisplay" class="text-indigo-600 font-bold">200</span>m</div>
             </div>
           </div>
           <button onclick="updateCurrentPositionOnly()" class="w-full sm:w-auto text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-4 py-2 rounded-xl transition flex justify-center items-center gap-1.5 shrink-0">
@@ -364,18 +364,18 @@
     </div>
   </div>
 
-  <!-- Javascript 完整核心邏輯 (V3.3) -->
+  <!-- Javascript 完整核心邏輯 (V3.4) -->
   <script>
-    var gasUrl = "https://script.google.com/macros/s/AKfycbwmMh5YrfOcvWjwt4gCqUZtafUf9NLoy0qaBaA9Uraq4kstr4N6qknGb3IXPT4MMxFg/exec";
+    var gasUrl = "https://script.google.com/macros/s/AKfycbxKsOoIStcDfKV7aj9msIuS7dsxCBhp_7OmMAH0E8HS8m-SjXczACqv-Bk3nNZS5XXy/exec";
     
     var companyLat = 24.9535;
     var companyLng = 121.2250;
     var companyRadius = 200; // 預設 200 公尺
 
-    var CACHE_KEY_ACCOUNTS = "att_app_accounts_cache_v33";
-    var CACHE_KEY_ATTENDANCE = "att_app_attendance_cache_v33";
-    var CACHE_KEY_HOLIDAYS = "att_app_holidays_cache_v33";
-    var CACHE_KEY_USER = "att_app_current_user_v33";
+    var CACHE_KEY_ACCOUNTS = "att_app_accounts_cache_v34";
+    var CACHE_KEY_ATTENDANCE = "att_app_attendance_cache_v34";
+    var CACHE_KEY_HOLIDAYS = "att_app_holidays_cache_v34";
+    var CACHE_KEY_USER = "att_app_current_user_v34";
 
     var allAccounts = [];
     var allAttendance = [];
@@ -394,6 +394,7 @@
     var lastUserLng = null;
     var isInGpsRange = false;
     var allowedLocations = [];
+    var currentValidLocationName = ""; 
 
     window.onload = function() {
       var now = new Date();
@@ -524,6 +525,7 @@
       iconDiv.className = "w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center shrink-0";
       textDiv.innerText = "定位擷取中...";
       isInGpsRange = false;
+      currentValidLocationName = "";
 
       if (!navigator.geolocation) {
         textDiv.innerText = "瀏覽器不支援 GPS 定位";
@@ -550,6 +552,7 @@
           isInGpsRange = (validLoc !== null);
 
           if (isInGpsRange) {
+            currentValidLocationName = validLoc.name;
             iconDiv.innerHTML = `<i class="fa-solid fa-check text-xl"></i>`;
             iconDiv.className = "w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 shadow-inner";
             textDiv.innerHTML = `<span class="text-emerald-600">已在 <b>${validLoc.name}</b> 範圍內 (距 ${nearestDist}m)</span>`;
@@ -581,47 +584,30 @@
       return Math.round(R * c);
     }
 
-    function performGpsAction(actionCallback) {
-      showLoading("取得即時定位中...");
-      if (!navigator.geolocation) {
-        hideLoading();
-        showCustomAlert("錯誤", "您的瀏覽器不支援定位功能，無法打卡", "error");
-        actionCallback(false);
+    function doClockAction(type) {
+      if (!isInGpsRange || !currentValidLocationName) {
+        showCustomAlert("打卡失敗", "目前尚未定位成功或不在合法打卡範圍內，請點擊上方「更新定位」確認位置。", "error");
         return;
       }
 
-      navigator.geolocation.getCurrentPosition(
-        function(pos) {
-          var uLat = pos.coords.latitude;
-          var uLng = pos.coords.longitude;
-          renderUserMapLocation(uLat, uLng, pos.coords.accuracy);
-
-          var nearestDist = Infinity;
-          var validLoc = null;
-
-          allowedLocations.forEach(loc => {
-            var dist = calculateDistanceMeters(uLat, uLng, loc.lat, loc.lng);
-            if (dist < nearestDist) nearestDist = dist;
-            if (dist <= loc.radius && !validLoc) {
-              validLoc = loc;
-            }
-          });
-
-          if (validLoc) {
-            actionCallback(true, uLat, uLng); 
-          } else {
-            hideLoading();
-            showCustomAlert("打卡失敗", `您目前距離最近的打卡點還有 ${nearestDist} 公尺，已超出允許範圍，無法打卡。`, "error");
-            actionCallback(false);
-          }
-        },
-        function(err) {
+      showLoading("正在將打卡紀錄上傳雲端...");
+      var targetUrl = `${gasUrl}?action=webClockIn&username=${encodeURIComponent(currentUser.username)}&type=${type}&locationName=${encodeURIComponent(currentValidLocationName)}`;
+      
+      fetch(targetUrl)
+        .then(res => res.json())
+        .then(res => {
           hideLoading();
-          showCustomAlert("定位失敗", "請確保已開啟手機 GPS 並允許網頁取用位置權限。", "error");
-          actionCallback(false);
-        },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 15000 }
-      );
+          if (res.result === "success") {
+            showCustomAlert("打卡成功", res.message, "success");
+            fetchSpreadsheetData(false);
+          } else {
+            showCustomAlert("打卡失敗", res.message || "未知錯誤", "error");
+          }
+        })
+        .catch(err => {
+          hideLoading();
+          showCustomAlert("連線錯誤", "無法寫入雲端伺服器，請稍後再試", "error");
+        });
     }
 
     function switchTab(tab) {
@@ -749,30 +735,6 @@
             <span class="text-[10px] sm:text-xs text-rose-100 font-medium relative z-10">(驗證 GPS 位置)</span>`;
         }
       }
-    }
-
-    function doClockAction(type) {
-      performGpsAction(function(success, lat, lng) {
-        if (!success) return;
-        
-        var targetUrl = `${gasUrl}?action=webClockIn&username=${encodeURIComponent(currentUser.username)}&type=${type}&lat=${lat}&lng=${lng}`;
-        
-        fetch(targetUrl)
-          .then(res => res.json())
-          .then(res => {
-            hideLoading();
-            if (res.result === "success") {
-              showCustomAlert("打卡成功", res.message, "success");
-              fetchSpreadsheetData(false);
-            } else {
-              showCustomAlert("打卡失敗", res.message || "未知錯誤", "error");
-            }
-          })
-          .catch(err => {
-            hideLoading();
-            showCustomAlert("連線錯誤", "無法寫入雲端伺服器，請稍後再試", "error");
-          });
-      });
     }
 
     function fetchSpreadsheetData(isSilent) {
@@ -1039,7 +1001,7 @@
       var daysInMonth = new Date(y, m + 1, 0).getDate();
       for (var d = 1; d <= daysInMonth; d++) {
         var cellDate = new Date(y, m, d);
-        if (cellDate.getDay() === 0) { // 預設週日排休
+        if (cellDate.getDay() === 0) { 
           var dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
           leaveItems.push({ date: dateStr, type: "排休", hours: 8 });
         }
