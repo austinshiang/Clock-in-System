@@ -427,7 +427,7 @@
   <!-- Javascript 核心邏輯 -->
   <script>
     // --- 全局變數與設定 ---
-    var defaultGASUrl = "https://script.google.com/macros/s/AKfycbwIaUMTtKAptWPXT7RYnvhmKcf3uxEkmmhsUqdU4ju6OK9AmenOVOqvbvsaLOnYrJk/exec";
+    var defaultGASUrl = "https://script.google.com/macros/s/AKfycbxhdwSjd2eSVp2t5PsR2D-D562JIjiEIsvsvVYwqmN30iEjQJhTMtIyDhPA8XgPYys/exec";
     var gasUrl = localStorage.getItem("att_app_custom_gas_url_v31") || defaultGASUrl;
     
     // GPS 目標設定 (預設為中壢姜駒車業附近)
@@ -651,7 +651,7 @@
           iconDiv.className = "w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0";
           textDiv.innerText = "定位失敗，請允許取用位置";
         },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 15000 }
       );
     }
 
@@ -707,7 +707,7 @@
           showCustomAlert("定位失敗", "請確保已開啟手機 GPS 並允許網頁取用位置權限。", "error");
           actionCallback(false);
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 15000 }
       );
     }
 
@@ -1004,22 +1004,41 @@
           return;
         }
 
-        showLoading("打卡傳輸中...");
+        showLoading("資料傳輸至雲端中...");
         var msgText = (type === 'clockIn') ? "上班" : "下班";
         
-        setTimeout(() => {
-          hideLoading();
-          
-          // 網頁版強制視覺鎖定 (防止使用者重複點按)
-          var nowTimeStr = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
-          if(btnTarget) {
-              btnTarget.onclick = null;
-              btnTarget.className = "relative bg-slate-200 text-slate-500 p-4 sm:p-5 rounded-2xl shadow-sm cursor-not-allowed flex flex-col items-center justify-center gap-1";
-              btnTarget.innerHTML = `<i class="fa-solid fa-check-circle text-3xl sm:text-4xl mb-1"></i><span class="font-extrabold text-base sm:text-lg tracking-wider">已${msgText}</span><span class="text-[10px] sm:text-xs font-bold">(${nowTimeStr})</span>`;
-          }
-
-          showCustomAlert("系統提示", `目前網頁版 ${msgText} 驗證成功！(若要實際寫入 Google Sheets，請確保您的 Apps Script 擁有 action=webClockIn API，或透過 LINE 發送)`, "success");
-        }, 800);
+        var url = gasUrl + "?action=webClockIn" +
+                  "&username=" + encodeURIComponent(currentUser.username) +
+                  "&type=" + encodeURIComponent(type);
+                  
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            hideLoading();
+            if (data.result === "success") {
+              if(btnTarget) {
+                  btnTarget.onclick = null;
+                  btnTarget.className = "relative bg-slate-200 text-slate-500 p-4 sm:p-5 rounded-2xl shadow-sm cursor-not-allowed flex flex-col items-center justify-center gap-1";
+                  btnTarget.innerHTML = `<i class="fa-solid fa-check-circle text-3xl sm:text-4xl mb-1"></i><span class="font-extrabold text-base sm:text-lg tracking-wider">已${msgText}</span><span class="text-[10px] sm:text-xs font-bold">(${data.time})</span>`;
+              }
+              showCustomAlert("打卡成功", data.message, "success");
+              fetchSpreadsheetData(true); // 觸發背景同步以更新狀態
+            } else {
+              if (btnTarget) {
+                  btnTarget.style.pointerEvents = "auto";
+                  btnTarget.classList.remove("opacity-75");
+              }
+              showCustomAlert("打卡失敗", data.message, "error");
+            }
+          })
+          .catch(err => {
+            hideLoading();
+            if (btnTarget) {
+                btnTarget.style.pointerEvents = "auto";
+                btnTarget.classList.remove("opacity-75");
+            }
+            showCustomAlert("連線錯誤", "無法連線至雲端伺服器，請檢查網路", "error");
+          });
       });
     }
 
