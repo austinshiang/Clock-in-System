@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>雲端打卡考勤管理系統 V3.1</title>
+  <title>雲端打卡考勤管理系統 V3.2</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- 引入 Leaflet.js 地圖庫 (免費開源，無需 API Key) -->
+  <!-- Leaflet.js 互動地圖 -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -44,14 +44,8 @@
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       font-weight: 700;
     }
-    
-    /* 修正 Leaflet 在隱藏/顯示時的破圖問題 */
-    #liveMap {
-      z-index: 10;
-    }
-    .leaflet-control-attribution {
-      display: none !important;
-    }
+    #liveMap { z-index: 10; }
+    .leaflet-control-attribution { display: none !important; }
   </style>
 </head>
 <body class="text-slate-800 antialiased pb-20 sm:pb-6">
@@ -63,7 +57,7 @@
         <i class="fa-solid fa-fingerprint text-3xl text-indigo-600"></i>
       </div>
       <h2 class="text-2xl font-black text-slate-800 mb-2 tracking-tight">系統登入</h2>
-      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤管理系統 V3.1</p>
+      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤管理系統 V3.2</p>
       
       <div class="space-y-4">
         <div class="relative">
@@ -88,7 +82,7 @@
   <!-- ================= 主系統介面 ================= -->
   <div id="mainApp" class="hidden max-w-5xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 relative">
     
-    <!-- 頂部導航與使用者狀態 (雙版共用) -->
+    <!-- 頂部導航 -->
     <div class="glass-panel p-3 sm:p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3">
       <div class="flex items-center gap-3 w-full sm:w-auto">
         <div class="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-600 text-white rounded-xl flex justify-center items-center font-bold text-lg sm:text-xl shadow-md">
@@ -113,7 +107,7 @@
         </button>
       </div>
 
-      <!-- 右側系統設定與登出 -->
+      <!-- 右側登出 -->
       <div class="hidden sm:flex items-center gap-2">
         <button onclick="logout()" class="text-slate-500 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 w-10 h-10 rounded-full flex justify-center items-center transition" title="登出系統">
           <i class="fa-solid fa-right-from-bracket"></i>
@@ -121,7 +115,7 @@
       </div>
     </div>
 
-    <!-- ================= 頁籤 1: 每日 GPS 打卡首頁 (簡化視圖) ================= -->
+    <!-- ================= 頁籤 1: 每日 GPS 打卡 ================= -->
     <div id="viewDailyContainer" class="space-y-4">
       <div class="glass-panel rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-200">
         
@@ -132,11 +126,10 @@
           </div>
         </div>
 
-        <!-- 即時 Leaflet 互動地圖視窗 -->
+        <!-- 地圖視窗 -->
         <div class="relative rounded-2xl overflow-hidden border-2 border-slate-200 shadow-sm mb-4">
           <div id="liveMap" class="w-full h-[220px] sm:h-[300px] z-10 bg-slate-100"></div>
           
-          <!-- 地圖右上角快捷控制 -->
           <div class="absolute top-2 right-2 z-[400] flex flex-col space-y-2">
             <button onclick="centerMapOnUser()" class="bg-white/90 hover:bg-white text-slate-700 p-2.5 rounded-xl shadow-md border border-slate-200 text-xs font-bold transition flex items-center justify-center" title="看我的位置">
               <i class="fa-solid fa-location-crosshairs text-indigo-600 text-lg"></i>
@@ -146,14 +139,13 @@
             </button>
           </div>
 
-          <!-- 地圖下方狀態回報橫條 -->
           <div class="bg-slate-800 text-white px-3 py-2 text-[11px] flex justify-between items-center">
             <div id="mapInfoPos" class="font-mono text-slate-300 truncate">目前座標：擷取中...</div>
             <div id="mapInfoAcc" class="text-amber-300 font-bold shrink-0 ml-2">精確度：--</div>
           </div>
         </div>
 
-        <!-- GPS 狀態與範圍判定 -->
+        <!-- GPS 狀態 -->
         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 mb-5">
           <div class="flex items-center space-x-2 w-full">
             <div id="gpsStatusIcon" class="w-10 h-10 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center shrink-0">
@@ -161,7 +153,7 @@
             </div>
             <div class="flex-1">
               <div id="gpsStatusText" class="text-sm font-bold text-slate-800">定位擷取中...</div>
-              <div class="text-[11px] text-slate-500 font-medium">公司許可半徑 <span id="txtCompanyRadiusDisplay" class="text-indigo-600 font-bold">150</span>m</div>
+              <div class="text-[11px] text-slate-500 font-medium">公司打卡範圍設定 <span id="txtCompanyRadiusDisplay" class="text-indigo-600 font-bold">200</span>m</div>
             </div>
           </div>
           <button onclick="updateCurrentPositionOnly()" class="w-full sm:w-auto text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-4 py-2 rounded-xl transition flex justify-center items-center gap-1.5 shrink-0">
@@ -169,7 +161,7 @@
           </button>
         </div>
 
-        <!-- 核心打卡按鈕 -->
+        <!-- 打卡按鈕 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <button id="btnClockIn" onclick="doClockAction('clockIn')" class="relative group overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 text-white p-4 sm:p-5 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1">
             <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
@@ -195,10 +187,10 @@
       </div>
     </div>
 
-    <!-- ================= 頁籤 2: 考勤總表與月曆 (詳細視圖) ================= -->
+    <!-- ================= 頁籤 2: 考勤總表 ================= -->
     <div id="viewSummaryContainer" class="hidden space-y-4">
       
-      <!-- 統計數據卡片 -->
+      <!-- 統計數據 -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div class="glass-panel p-4 sm:p-5 rounded-2xl border border-rose-100 shadow-sm">
           <div class="flex items-center gap-2 mb-2 text-rose-500">
@@ -247,7 +239,7 @@
         </div>
       </div>
 
-      <!-- 月曆區塊 -->
+      <!-- 月曆 -->
       <div class="glass-panel rounded-3xl p-4 sm:p-6 shadow-sm">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4 mb-4">
           
@@ -261,14 +253,13 @@
             </button>
           </div>
 
-          <!-- 切換員工 (僅 Admin 可見) -->
+          <!-- 切換員工 -->
           <div id="adminUserSelector" class="hidden w-full sm:w-auto">
             <select id="selEmployee" onchange="switchEmployeeView()" class="w-full sm:w-48 bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl focus:ring-4 focus:ring-indigo-500/20 block p-2.5">
             </select>
           </div>
         </div>
 
-        <!-- 星期標題 -->
         <div class="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
           <div class="text-center text-[10px] sm:text-xs font-black text-rose-500 py-1">週日</div>
           <div class="text-center text-[10px] sm:text-xs font-black text-slate-500 py-1">週一</div>
@@ -279,7 +270,6 @@
           <div class="text-center text-[10px] sm:text-xs font-black text-indigo-500 py-1">週六</div>
         </div>
         
-        <!-- 月曆本體 -->
         <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-2 auto-rows-fr">
           <!-- JS 動態生成 -->
         </div>
@@ -295,7 +285,7 @@
       </div>
     </div>
 
-  </div> <!-- End mainApp -->
+  </div> 
 
   <!-- ================= 手機版專屬底部導覽列 ================= -->
   <div id="mobileBottomNav" class="sm:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-40 pb-safe">
@@ -315,9 +305,7 @@
     </div>
   </div>
 
-  <!-- ================= 互動彈窗 (Modals) ================= -->
-
-  <!-- 1. 單日請假/特休 Modal -->
+  <!-- ================= 互動彈窗 ================= -->
   <div id="singleLeaveModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
     <div class="glass-panel p-6 rounded-3xl w-full max-w-sm shadow-2xl relative">
       <button onclick="closeSingleLeaveModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
@@ -358,7 +346,6 @@
     </div>
   </div>
 
-  <!-- Loading / Alert Overlay -->
   <div id="loadingOverlay" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
     <div class="bg-white p-5 rounded-2xl shadow-xl flex items-center space-x-4 border border-slate-100">
       <i class="fa-solid fa-circle-notch fa-spin text-indigo-600 text-3xl"></i>
@@ -379,22 +366,16 @@
 
   <!-- Javascript 核心邏輯 -->
   <script>
-    // --- 全局變數與設定 ---
-    var defaultGASUrl = "https://script.google.com/macros/s/AKfycbwIaUMTtKAptWPXT7RYnvhmKcf3uxEkmmhsUqdU4ju6OK9AmenOVOqvbvsaLOnYrJk/exec";
-    var gasUrl = localStorage.getItem("att_app_custom_gas_url_v31") || defaultGASUrl;
+    var gasUrl = "https://script.google.com/macros/s/AKfycbxKsOoIStcDfKV7aj9msIuS7dsxCBhp_7OmMAH0E8HS8m-SjXczACqv-Bk3nNZS5XXy/exec";
     
-    // GPS 目標設定 (預設為中壢姜駒車業附近)
-    var companyLat = parseFloat(localStorage.getItem("att_app_gps_lat")) || 24.9535;
-    var companyLng = parseFloat(localStorage.getItem("att_app_gps_lng")) || 121.2250;
-    
-    var storedRadius = parseInt(localStorage.getItem("att_app_gps_radius"));
-    var companyRadius = (!isNaN(storedRadius) && storedRadius > 0) ? storedRadius : 200; // 預設恢復為 200m 防呆
+    var companyLat = 24.9535;
+    var companyLng = 121.2250;
+    var companyRadius = 200; // 預設 200 公尺
 
-    // 快取與狀態
-    var CACHE_KEY_ACCOUNTS = "att_app_accounts_cache_v31";
-    var CACHE_KEY_ATTENDANCE = "att_app_attendance_cache_v31";
-    var CACHE_KEY_HOLIDAYS = "att_app_holidays_cache_v31";
-    var CACHE_KEY_USER = "att_app_current_user_v31";
+    var CACHE_KEY_ACCOUNTS = "att_app_accounts_cache_v32";
+    var CACHE_KEY_ATTENDANCE = "att_app_attendance_cache_v32";
+    var CACHE_KEY_HOLIDAYS = "att_app_holidays_cache_v32";
+    var CACHE_KEY_USER = "att_app_current_user_v32";
 
     var allAccounts = [];
     var allAttendance = [];
@@ -402,9 +383,8 @@
     var currentUser = null;
     var viewTargetUsername = ""; 
     var currentMonthDate = new Date();
-    var activeTab = "daily"; // 預設頁籤
+    var activeTab = "daily"; 
 
-    // Leaflet 地圖變數
     var map = null;
     var companyMarkers = [];
     var companyFenceCircles = [];
@@ -415,16 +395,11 @@
     var isInGpsRange = false;
     var allowedLocations = [];
 
-    // --- 初始化 ---
     window.onload = function() {
-      // 填入今日日期
       var now = new Date();
       document.getElementById("txtCurrentDateDisplay").innerText = 
         `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-      document.getElementById("txtCompanyRadiusDisplay").innerText = companyRadius;
-
-      // 檢查是否已登入
       var savedUserStr = localStorage.getItem(CACHE_KEY_USER);
       if (savedUserStr) {
         try {
@@ -434,24 +409,17 @@
           document.getElementById("mainApp").classList.remove("hidden");
           
           initUserSession();
-          
-          // 載入本地快取，並在背景向雲端要新資料
           var loaded = loadDataFromLocalStorage();
-          if (loaded) {
-            refreshView();
-          }
-          fetchSpreadsheetData(true); // 開啟時自動向後台同步
-          
+          if (loaded) refreshView();
+          fetchSpreadsheetData(true); 
         } catch(e) {
           localStorage.removeItem(CACHE_KEY_USER);
         }
       }
     };
 
-    // --- GPS 與地圖相關 ---
     function initInteractiveMap() {
-      if (map) return; // 避免重複初始化
-      
+      if (map) return; 
       try {
         var startLat = allowedLocations.length > 0 ? allowedLocations[0].lat : companyLat;
         var startLng = allowedLocations.length > 0 ? allowedLocations[0].lng : companyLng;
@@ -463,7 +431,7 @@
         }).addTo(map);
 
         drawCompanyLocations();
-        updateCurrentPositionOnly(); // 取得並畫出藍點
+        updateCurrentPositionOnly(); 
       } catch (err) {
         console.error("Leaflet Init Error:", err);
       }
@@ -471,8 +439,6 @@
 
     function drawCompanyLocations() {
       if (!map) return;
-      
-      // 清除舊的目標
       companyMarkers.forEach(m => map.removeLayer(m));
       companyFenceCircles.forEach(c => map.removeLayer(c));
       companyMarkers = [];
@@ -590,7 +556,7 @@
           } else {
             iconDiv.innerHTML = `<i class="fa-solid fa-xmark text-xl"></i>`;
             iconDiv.className = "w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-inner";
-            textDiv.innerHTML = `<span class="text-rose-600">超出所有打卡點範圍 (最近距 ${nearestDist}m)</span>`;
+            textDiv.innerHTML = `<span class="text-rose-600">超出打卡範圍 (最近距 ${nearestDist}m)</span>`;
           }
           renderUserMapLocation(uLat, uLng, accuracy);
         },
@@ -604,7 +570,7 @@
     }
 
     function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
-      var R = 6371e3; // 地球半徑(米)
+      var R = 6371e3;
       var rad = Math.PI / 180;
       var dLat = (lat2 - lat1) * rad;
       var dLon = (lon2 - lon1) * rad;
@@ -628,7 +594,7 @@
         function(pos) {
           var uLat = pos.coords.latitude;
           var uLng = pos.coords.longitude;
-          renderUserMapLocation(uLat, uLng, pos.coords.accuracy); // 同步更新地圖
+          renderUserMapLocation(uLat, uLng, pos.coords.accuracy);
 
           var nearestDist = Infinity;
           var validLoc = null;
@@ -642,11 +608,10 @@
           });
 
           if (validLoc) {
-            // 在任一範圍內，執行打卡
-            actionCallback(true); 
+            actionCallback(true, uLat, uLng); 
           } else {
             hideLoading();
-            showCustomAlert("打卡失敗", `您目前距離最近的打卡點還有 ${nearestDist} 公尺，已超出允許範圍，無法打卡。`, "error");
+            showCustomAlert("打卡失敗", `您目前距離最近的打卡點還有 ${nearestDist} 公尺，已超出 200 公尺允許範圍，無法打卡。`, "error");
             actionCallback(false);
           }
         },
@@ -659,7 +624,6 @@
       );
     }
 
-    // --- 頁面與 UI 邏輯 ---
     function switchTab(tab) {
       activeTab = tab;
       var vDaily = document.getElementById("viewDailyContainer");
@@ -676,8 +640,6 @@
         btnS.className = "text-indigo-100 hover:text-white px-5 py-2 rounded-xl transition flex items-center gap-2 text-sm font-medium";
         mNavD.className = "flex flex-col items-center justify-center w-full h-full text-indigo-600 font-bold text-[11px] space-y-1 transition";
         mNavS.className = "flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-600 font-medium text-[11px] space-y-1 transition";
-        
-        // 修正地圖尺寸
         setTimeout(() => { if(map) map.invalidateSize(); }, 150);
       } else {
         vDaily.classList.add("hidden");
@@ -704,10 +666,8 @@
         adminSelector.classList.add("hidden");
       }
 
-      // 解析個人的 GPS 打卡點設定
       allowedLocations = [];
       if (currentUser && currentUser.gpsLocations) {
-        // 支援使用 | 或 ; 或 " 隔開
         var parts = currentUser.gpsLocations.split(/[\|;]/);
         parts.forEach((p, idx) => {
           var cleanP = p.replace(/"/g, "").trim();
@@ -717,7 +677,6 @@
             var pLat = parseFloat(coords[0]);
             var pLng = parseFloat(coords[1]);
             var pRad = coords.length >= 3 ? parseInt(coords[2], 10) : NaN;
-            
             if (!isNaN(pLat) && !isNaN(pLng)) {
               allowedLocations.push({
                 lat: pLat,
@@ -730,12 +689,10 @@
         });
       }
       
-      // 若資料庫無設定，則退回使用本地預設值
       if (allowedLocations.length === 0) {
         allowedLocations.push({ lat: companyLat, lng: companyLng, radius: companyRadius, name: "預設打卡點" });
       }
 
-      // 介面更新：顯示多節點或單一範圍
       var rText = allowedLocations.length > 1 ? "多節點專屬定位" : (allowedLocations[0].radius + "m");
       document.getElementById("txtCompanyRadiusDisplay").innerText = rText;
 
@@ -794,66 +751,63 @@
       }
     }
 
-    function populateEmployeeDropdown() {
-      var sel = document.getElementById("selEmployee");
-      sel.innerHTML = "";
-      allAccounts.forEach(acc => {
-        var opt = document.createElement("option");
-        opt.value = acc.username;
-        opt.innerText = acc.name + " (" + acc.username + ")";
-        if (acc.username === viewTargetUsername) opt.selected = true;
-        sel.appendChild(opt);
+    function doClockAction(type) {
+      performGpsAction(function(success, lat, lng) {
+        if (!success) return;
+        
+        var targetUrl = `${gasUrl}?action=webClockIn&username=${encodeURIComponent(currentUser.username)}&type=${type}&lat=${lat}&lng=${lng}`;
+        
+        fetch(targetUrl)
+          .then(res => res.json())
+          .then(res => {
+            hideLoading();
+            if (res.result === "success") {
+              showCustomAlert("打卡成功", res.message, "success");
+              fetchSpreadsheetData(false);
+            } else {
+              showCustomAlert("打卡失敗", res.message || "未知錯誤", "error");
+            }
+          })
+          .catch(err => {
+            hideLoading();
+            showCustomAlert("連線錯誤", "無法寫入雲端伺服器，請稍後再試", "error");
+          });
       });
     }
 
-    function switchEmployeeView() {
-      viewTargetUsername = document.getElementById("selEmployee").value;
-      renderCalendar();
-      calculateMonthlyStats();
-    }
-
-    function changeMonth(delta) {
-      currentMonthDate.setMonth(currentMonthDate.getMonth() + delta);
-      renderCalendar();
-      calculateMonthlyStats();
-    }
-
-    // --- API 資料同步 ---
     function fetchSpreadsheetData(isSilent) {
-      if (!isSilent) showLoading("同步雲端考勤資料...");
+      if (!isSilent) showLoading("同步雲端資料中...");
       
-      var url = gasUrl + "?action=getAllData";
-      fetch(url)
-        .then(response => response.json())
+      fetch(`${gasUrl}?action=getAllData`)
+        .then(res => res.json())
         .then(data => {
           if (!isSilent) hideLoading();
           if (data.result === "success") {
             allAccounts = data.accounts || [];
             allAttendance = data.attendance || [];
             allHolidays = data.holidays || [];
-            
+
             localStorage.setItem(CACHE_KEY_ACCOUNTS, JSON.stringify(allAccounts));
             localStorage.setItem(CACHE_KEY_ATTENDANCE, JSON.stringify(allAttendance));
             localStorage.setItem(CACHE_KEY_HOLIDAYS, JSON.stringify(allHolidays));
-            
-            if (!currentUser) return; // 尚未登入則不重繪
-            
-            // 更新目前使用者資訊
-            var matchUser = allAccounts.find(a => a.username === currentUser.username);
-            if (matchUser) {
-              currentUser = matchUser;
+
+            var found = allAccounts.find(a => a.username === currentUser.username);
+            if (found) {
+              currentUser = found;
               localStorage.setItem(CACHE_KEY_USER, JSON.stringify(currentUser));
+              initUserSession();
             }
+
             refreshView();
-            if (!isSilent) showCustomAlert("同步成功", "資料庫考勤與假日已更新至最新狀態。", "success");
+            if (!isSilent) showCustomAlert("同步成功", "已成功從 Google 雲端載入最新考勤紀錄！", "success");
           } else {
-            if (!isSilent) showCustomAlert("錯誤", "同步失敗: " + data.message, "error");
+            if (!isSilent) showCustomAlert("同步失敗", data.message || "伺服器異常", "error");
           }
         })
         .catch(err => {
           if (!isSilent) {
             hideLoading();
-            showCustomAlert("連線錯誤", "無法連線至雲端伺服器，請檢查網路或設定 API URL", "error");
+            showCustomAlert("連線失敗", "無法與 Google Apps Script 建立連線，請檢查網路。", "error");
           }
         });
     }
@@ -863,352 +817,330 @@
         var acc = localStorage.getItem(CACHE_KEY_ACCOUNTS);
         var att = localStorage.getItem(CACHE_KEY_ATTENDANCE);
         var hol = localStorage.getItem(CACHE_KEY_HOLIDAYS);
-        
-        if (acc) allAccounts = JSON.parse(acc);
-        if (att) allAttendance = JSON.parse(att);
-        if (hol) allHolidays = JSON.parse(hol);
-        
-        return (acc && att);
-      } catch(e) {
-        return false;
-      }
+        if (acc && att) {
+          allAccounts = JSON.parse(acc);
+          allAttendance = JSON.parse(att);
+          allHolidays = hol ? JSON.parse(hol) : [];
+          return true;
+        }
+      } catch (e) {}
+      return false;
     }
 
     function handleLogin() {
       var u = document.getElementById("loginUsername").value.trim();
       var p = document.getElementById("loginPassword").value.trim();
-      if (!u || !p) return showCustomAlert("提示", "請輸入帳號密碼", "warning");
+      if (!u || !p) {
+        showCustomAlert("提示", "請輸入帳號與密碼", "warning");
+        return;
+      }
 
-      showLoading("驗證中...");
-      
-      // 若無快取，強制拉取一次
-      if (allAccounts.length === 0) {
-        fetch(gasUrl + "?action=getAllData")
-          .then(res => res.json())
-          .then(data => {
-            hideLoading();
-            if (data.result === "success") {
-              allAccounts = data.accounts;
-              allAttendance = data.attendance;
-              allHolidays = data.holidays;
-              checkLoginCredentials(u, p);
+      showLoading("驗證登入中...");
+      fetch(`${gasUrl}?action=getAllData`)
+        .then(res => res.json())
+        .then(data => {
+          hideLoading();
+          if (data.result === "success") {
+            allAccounts = data.accounts || [];
+            allAttendance = data.attendance || [];
+            allHolidays = data.holidays || [];
+
+            localStorage.setItem(CACHE_KEY_ACCOUNTS, JSON.stringify(allAccounts));
+            localStorage.setItem(CACHE_KEY_ATTENDANCE, JSON.stringify(allAttendance));
+            localStorage.setItem(CACHE_KEY_HOLIDAYS, JSON.stringify(allHolidays));
+
+            var matched = allAccounts.find(a => a.username.toLowerCase() === u.toLowerCase() && a.password === p);
+            if (matched) {
+              currentUser = matched;
+              viewTargetUsername = currentUser.username;
+              localStorage.setItem(CACHE_KEY_USER, JSON.stringify(currentUser));
+
+              document.getElementById("loginOverlay").classList.add("hidden");
+              document.getElementById("mainApp").classList.remove("hidden");
+
+              initUserSession();
+              refreshView();
             } else {
-              showCustomAlert("錯誤", "系統連線異常", "error");
+              showCustomAlert("登入失敗", "帳號或密碼錯誤，請重新確認", "error");
             }
-          })
-          .catch(err => {
-            hideLoading();
-            showCustomAlert("錯誤", "無法連線至伺服器，請檢查網路或 API 網址", "error");
-          });
-      } else {
-        hideLoading();
-        checkLoginCredentials(u, p);
-      }
-    }
-
-    function checkLoginCredentials(u, p) {
-      var match = allAccounts.find(a => String(a.username).toLowerCase() === u.toLowerCase() && String(a.password) === p);
-      if (match) {
-        currentUser = match;
-        viewTargetUsername = match.username;
-        localStorage.setItem(CACHE_KEY_USER, JSON.stringify(currentUser));
-        
-        document.getElementById("loginOverlay").classList.add("hidden");
-        document.getElementById("mainApp").classList.remove("hidden");
-        initUserSession();
-        refreshView();
-        
-        // 登入後靜默同步
-        fetchSpreadsheetData(true);
-      } else {
-        showCustomAlert("登入失敗", "帳號或密碼錯誤，請重試", "error");
-      }
+          } else {
+            showCustomAlert("錯誤", "無法連線至雲端資料庫", "error");
+          }
+        })
+        .catch(err => {
+          hideLoading();
+          showCustomAlert("網路異常", "無法與後端伺服器通訊", "error");
+        });
     }
 
     function logout() {
       localStorage.removeItem(CACHE_KEY_USER);
       currentUser = null;
-      document.getElementById("loginUsername").value = "";
-      document.getElementById("loginPassword").value = "";
       document.getElementById("mainApp").classList.add("hidden");
       document.getElementById("loginOverlay").classList.remove("hidden");
-      switchTab('daily'); // 登出重置頁籤
+      document.getElementById("loginUsername").value = "";
+      document.getElementById("loginPassword").value = "";
     }
 
-    // --- 打卡與請假動作 ---
-    function doClockAction(type) {
-      var btnTarget = type === 'clockIn' ? document.getElementById("btnClockIn") : document.getElementById("btnClockOut");
-      if (btnTarget) {
-          btnTarget.style.pointerEvents = "none";
-          btnTarget.classList.add("opacity-75");
-      }
-
-      performGpsAction(function(isSuccess) {
-        if (!isSuccess) {
-          if (btnTarget) {
-              btnTarget.style.pointerEvents = "auto";
-              btnTarget.classList.remove("opacity-75");
-          }
-          return;
-        }
-
-        showLoading("資料傳輸至雲端中...");
-        var msgText = (type === 'clockIn') ? "上班" : "下班";
-        
-        var url = gasUrl + "?action=webClockIn" +
-                  "&username=" + encodeURIComponent(currentUser.username) +
-                  "&type=" + encodeURIComponent(type);
-                  
-        fetch(url)
-          .then(res => res.json())
-          .then(data => {
-            hideLoading();
-            if (data.result === "success") {
-              if(btnTarget) {
-                  btnTarget.onclick = null;
-                  btnTarget.className = "relative bg-slate-200 text-slate-500 p-4 sm:p-5 rounded-2xl shadow-sm cursor-not-allowed flex flex-col items-center justify-center gap-1";
-                  btnTarget.innerHTML = `<i class="fa-solid fa-check-circle text-3xl sm:text-4xl mb-1"></i><span class="font-extrabold text-base sm:text-lg tracking-wider">已${msgText}</span><span class="text-[10px] sm:text-xs font-bold">(${data.time})</span>`;
-              }
-              showCustomAlert("打卡成功", data.message, "success");
-              fetchSpreadsheetData(true); // 觸發背景同步以更新狀態
-            } else {
-              if (btnTarget) {
-                  btnTarget.style.pointerEvents = "auto";
-                  btnTarget.classList.remove("opacity-75");
-              }
-              showCustomAlert("打卡失敗", data.message, "error");
-            }
-          })
-          .catch(err => {
-            hideLoading();
-            if (btnTarget) {
-                btnTarget.style.pointerEvents = "auto";
-                btnTarget.classList.remove("opacity-75");
-            }
-            showCustomAlert("連線錯誤", "無法連線至雲端伺服器，請檢查網路", "error");
-          });
+    function populateEmployeeDropdown() {
+      var sel = document.getElementById("selEmployee");
+      if (!sel) return;
+      sel.innerHTML = "";
+      allAccounts.forEach(acc => {
+        var opt = document.createElement("option");
+        opt.value = acc.username;
+        opt.innerText = `${acc.name} (${acc.username})`;
+        if (acc.username === viewTargetUsername) opt.selected = true;
+        sel.appendChild(opt);
       });
     }
 
-    // --- 月曆渲染與邏輯 ---
-    function normalizeDate(dateVal) {
-      if (!dateVal) return "";
-      var d = new Date(dateVal);
-      if (isNaN(d.getTime())) {
-        var str = String(dateVal).replace(/[\/\.]/g, "-").split("T")[0];
-        return str.substring(0, 10);
+    function switchEmployeeView() {
+      var sel = document.getElementById("selEmployee");
+      if (sel) {
+        viewTargetUsername = sel.value;
+        renderCalendar();
+        calculateMonthlyStats();
       }
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function changeMonth(dir) {
+      currentMonthDate.setMonth(currentMonthDate.getMonth() + dir);
+      renderCalendar();
+      calculateMonthlyStats();
     }
 
     function renderCalendar() {
-      if (!currentUser || !viewTargetUsername) return;
       var grid = document.getElementById("calendarGrid");
       if (!grid) return;
       grid.innerHTML = "";
 
       var y = currentMonthDate.getFullYear();
       var m = currentMonthDate.getMonth();
-      document.getElementById("calendarMonthLabel").innerText = `${y}-${String(m + 1).padStart(2, '0')}`;
+      document.getElementById("calendarMonthLabel").innerText = `${y}-${String(m + 1).padStart(2, "0")}`;
 
       var firstDay = new Date(y, m, 1).getDay();
       var daysInMonth = new Date(y, m + 1, 0).getDate();
-      
+
+      var targetAcc = allAccounts.find(a => a.username === viewTargetUsername) || currentUser;
+      var records = allAttendance.filter(r => r.username === targetAcc.username);
+
       var todayStr = normalizeDate(new Date());
 
       for (var i = 0; i < firstDay; i++) {
-        var emptyDiv = document.createElement("div");
-        emptyDiv.className = "p-2 bg-transparent";
-        grid.appendChild(emptyDiv);
+        var emptyCell = document.createElement("div");
+        emptyCell.className = "bg-slate-50/50 rounded-2xl h-20 sm:h-24 opacity-30";
+        grid.appendChild(emptyCell);
       }
 
-      var userRecords = allAttendance.filter(r => r.username === viewTargetUsername);
-
       for (var d = 1; d <= daysInMonth; d++) {
-        var iterDate = new Date(y, m, d);
-        var dateStr = normalizeDate(iterDate);
-        var dayOfWeek = iterDate.getDay();
-        
-        var rec = userRecords.find(r => normalizeDate(r.date) === dateStr);
-        var matchedHoliday = allHolidays.find(h => normalizeDate(h.date) === dateStr);
-        
+        var dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        var cellDate = new Date(y, m, d);
+        var dayOfWeek = cellDate.getDay();
+
+        var dayRec = records.find(r => normalizeDate(r.date) === dateStr);
+        var holiday = allHolidays.find(h => normalizeDate(h.date) === dateStr);
+
         var cell = document.createElement("div");
-        cell.className = "relative p-1.5 sm:p-2 border border-slate-100 rounded-xl min-h-[70px] sm:min-h-[85px] flex flex-col justify-start transition hover:border-indigo-200 cursor-default bg-white";
+        var bgClass = "bg-white border-slate-100";
         
-        // === 優先順序判定與背景色 ===
-        var isClocked = rec && (rec.clockIn || rec.clockOut);
-        var isLeaveOrOff = rec && (rec.status.indexOf("休") !== -1 || rec.status.indexOf("假") !== -1);
-        
-        // 週末全滿版背景
-        if (dayOfWeek === 0) cell.classList.add("bg-rose-50");
-        else if (dayOfWeek === 6) cell.classList.add("bg-indigo-50");
+        if (dayOfWeek === 0) bgClass = "bg-rose-50/60 border-rose-100";
+        else if (dayOfWeek === 6) bgClass = "bg-indigo-50/40 border-indigo-100";
 
-        var tagHtml = "";
-        
-        if (isClocked) {
-          // Priority 1: 有打卡
-          var statColor = (rec.status.indexOf("遲到") !== -1 || rec.status.indexOf("早退") !== -1) ? "text-rose-600 bg-rose-100 border-rose-200" : "text-emerald-600 bg-emerald-100 border-emerald-200";
-          tagHtml = `<div class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${statColor} mt-1 truncate">${rec.status}</div>`;
-          if (rec.clockIn || rec.clockOut) {
-            tagHtml += `<div class="text-[9px] text-slate-500 font-mono mt-0.5">${rec.clockIn||'--'}-${rec.clockOut||'--'}</div>`;
-          }
-        } 
-        else if (isLeaveOrOff) {
-          // Priority 2: 請假/排休
-          tagHtml = `<div class="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-600 bg-amber-50 border-amber-200 mt-1 truncate">${rec.status}</div>`;
-        }
-        else if (matchedHoliday) {
-          // Priority 3: 國定假日 (覆蓋背景)
-          cell.classList.remove("bg-white", "bg-indigo-50", "bg-rose-50");
-          cell.classList.add("bg-rose-100");
-          tagHtml = `<div class="text-[10px] font-extrabold px-1.5 py-0.5 rounded text-rose-700 mt-1 truncate">🎈 ${matchedHoliday.name}</div>`;
-        }
-        else if (dateStr <= todayStr && dayOfWeek !== 0 && dayOfWeek !== 6) {
-          // Priority 4: 過去工作日缺勤
-          tagHtml = `<div class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-rose-500 shadow-sm mt-1 truncate">未打卡(缺勤)</div>`;
+        var isPastOrToday = (dateStr <= todayStr);
+        var isWorkday = (dayOfWeek !== 0 && dayOfWeek !== 6);
+
+        var badgeHtml = "";
+        var hasClock = dayRec && (dayRec.clockIn || dayRec.clockOut);
+        var hasLeave = dayRec && (dayRec.status === "排休" || dayRec.status.indexOf("假") !== -1 || dayRec.isScheduledLeave == 1 || dayRec.leaveHours > 0);
+
+        if (hasClock) {
+          var clockText = dayRec.clockIn ? dayRec.clockIn : "--:--";
+          var statusColor = dayRec.status.indexOf("遲到") !== -1 ? "text-amber-600 bg-amber-50" : "text-emerald-600 bg-emerald-50";
+          badgeHtml = `<div class="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded ${statusColor} truncate">${dayRec.status}</div>`;
+        } else if (hasLeave) {
+          var leaveLabel = dayRec.status === "排休" ? "排休" : dayRec.status;
+          badgeHtml = `<div class="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded text-indigo-600 bg-indigo-50 truncate">${leaveLabel}</div>`;
+        } else if (holiday) {
+          bgClass = "bg-rose-100/70 border-rose-200";
+          badgeHtml = `<div class="mt-1 text-[10px] font-black px-1.5 py-0.5 rounded text-rose-700 bg-rose-200/60 truncate">${holiday.name}</div>`;
+        } else if (isWorkday && isPastOrToday) {
+          badgeHtml = `<div class="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded text-rose-600 bg-rose-50 truncate">未打卡(缺勤)</div>`;
         }
 
+        cell.className = `flex flex-col justify-between p-2 rounded-2xl border ${bgClass} h-20 sm:h-24 shadow-sm transition hover:shadow-md relative overflow-hidden`;
         cell.innerHTML = `
-          <div class="flex justify-between items-start">
-            <span class="text-[11px] sm:text-xs font-bold ${dateStr === todayStr ? 'bg-indigo-600 text-white w-5 h-5 flex justify-center items-center rounded-full shadow-md' : 'text-slate-700'}">${d}</span>
+          <div class="flex justify-between items-center">
+            <span class="text-xs sm:text-sm font-black text-slate-700">${d}</span>
+            ${dateStr === todayStr ? '<span class="w-2 h-2 rounded-full bg-indigo-600"></span>' : ''}
           </div>
-          ${tagHtml}
+          <div class="flex-1 flex flex-col justify-end">
+            ${badgeHtml}
+          </div>
         `;
-        
         grid.appendChild(cell);
       }
     }
 
     function calculateMonthlyStats() {
-      if (!currentUser || !viewTargetUsername) return;
       var y = currentMonthDate.getFullYear();
-      var m = currentMonthDate.getMonth() + 1;
-      var prefix = `${y}-${String(m).padStart(2,'0')}`;
+      var m = currentMonthDate.getMonth();
+      var prefix = `${y}-${String(m + 1).padStart(2, "0")}`;
 
-      var userRecords = allAttendance.filter(r => r.username === viewTargetUsername);
-      var monthlyRecs = userRecords.filter(r => normalizeDate(r.date).startsWith(prefix));
+      var targetUsername = viewTargetUsername || currentUser.username;
+      var targetAcc = allAccounts.find(a => a.username === targetUsername) || currentUser;
+      var records = allAttendance.filter(r => r.username === targetUsername && r.date.indexOf(prefix) === 0);
 
-      var lateCount = 0, lateMins = 0, otHours = 0, leaveDays = 0, specialLeaveUsedHours = 0;
+      var lateCount = 0;
+      var lateMinsTotal = 0;
+      var otHoursTotal = 0;
+      var leaveDaysCount = 0;
 
-      monthlyRecs.forEach(r => {
-        var s = String(r.status || "");
-        if (s.indexOf("遲到") !== -1) {
+      records.forEach(r => {
+        if (r.status && r.status.indexOf("遲到") !== -1) {
           lateCount++;
-          var mMatch = s.match(/遲到\s*(\d+)/);
-          if (mMatch) lateMins += parseInt(mMatch[1], 10);
+          var match = r.status.match(/遲到\s*(\d+)\s*分鐘/);
+          if (match) lateMinsTotal += parseInt(match[1], 10);
         }
-        otHours += parseFloat(r.overtime || 0);
-        if (s.indexOf("假") !== -1 || s.indexOf("休") !== -1) {
-          if (parseFloat(r.leaveHours) >= 8) leaveDays += 1;
-          else if (parseFloat(r.leaveHours) > 0) leaveDays += 0.5;
-        }
-      });
-
-      userRecords.forEach(r => {
-        if (String(r.status).indexOf("特休") !== -1) {
-          specialLeaveUsedHours += parseFloat(r.leaveHours || 0);
+        if (r.overtime) otHoursTotal += parseFloat(r.overtime) || 0;
+        if (r.status === "排休" || r.status.indexOf("假") !== -1 || r.leaveHours > 0) {
+          leaveDaysCount += (r.leaveHours ? (r.leaveHours / 8) : 1);
         }
       });
-
-      var targetAcc = allAccounts.find(a => a.username === viewTargetUsername);
-      var specialLeaveInitialDays = parseNumericValue(targetAcc ? targetAcc.specialLeaveDays : 0);
-      var totalSpecialLeaveHours = specialLeaveInitialDays * 8;
-      var remSpecialHours = totalSpecialLeaveHours - specialLeaveUsedHours;
-      var remSpecialDays = parseFloat((remSpecialHours / 8).toFixed(1));
 
       var elLateC = document.getElementById("statLateCount");
       var elLateM = document.getElementById("statLateMinutes");
       var elOT = document.getElementById("statOvertime");
       var elLeave = document.getElementById("statLeaveDays");
-      var elSpInit = document.getElementById("statSpecialLeaveInitial");
-      var elSpRem = document.getElementById("statSpecialLeave");
-      var elSpRemD = document.getElementById("statSpecialLeaveDaysRem");
+      var elSpl = document.getElementById("statSpecialLeave");
+      var elSplInit = document.getElementById("statSpecialLeaveInitial");
+      var elSplRem = document.getElementById("statSpecialLeaveDaysRem");
 
       if (elLateC) elLateC.innerText = lateCount;
-      if (elLateM) elLateM.innerText = lateMins;
-      if (elOT) elOT.innerText = parseFloat(otHours.toFixed(1));
-      if (elLeave) elLeave.innerText = leaveDays;
-      
-      if (elSpInit) elSpInit.innerText = `初始 ${specialLeaveInitialDays}天`;
-      if (elSpRem) elSpRem.innerText = remSpecialHours;
-      if (elSpRemD) elSpRemD.innerText = remSpecialDays;
+      if (elLateM) elLateM.innerText = lateMinsTotal;
+      if (elOT) elOT.innerText = otHoursTotal.toFixed(1);
+      if (elLeave) elLeave.innerText = leaveDaysCount.toFixed(1);
+
+      var initialDays = parseFloat(targetAcc.specialLeaveDays || 0);
+      var totalHours = initialDays * 8;
+      if (elSplInit) elSplInit.innerText = `初始 ${initialDays}天`;
+      if (elSpl) elSpl.innerText = totalHours;
+      if (elSplRem) elSplRem.innerText = initialDays.toFixed(1);
     }
 
-    function parseNumericValue(val) {
-      if (val === null || val === undefined || val === "") return 0;
-      var parsed = parseFloat(val);
-      return isNaN(parsed) ? 0 : parsed;
+    function submitMonthlyLeave() {
+      var y = currentMonthDate.getFullYear();
+      var m = currentMonthDate.getMonth();
+      var yearMonthStr = `${y}-${String(m + 1).padStart(2, "0")}`;
+
+      showLoading("提交排休中...");
+      var targetAcc = allAccounts.find(a => a.username === viewTargetUsername) || currentUser;
+      var monthlyOff = targetAcc.monthlyOffDays || 8;
+
+      var leaveItems = [];
+      var daysInMonth = new Date(y, m + 1, 0).getDate();
+      for (var d = 1; d <= daysInMonth; d++) {
+        var cellDate = new Date(y, m, d);
+        if (cellDate.getDay() === 0) { // 預設週日排休
+          var dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          leaveItems.push({ date: dateStr, type: "排休", hours: 8 });
+        }
+      }
+
+      fetch(`${gasUrl}?action=submitLeave&username=${encodeURIComponent(targetAcc.username)}&yearMonth=${yearMonthStr}&leaveData=${encodeURIComponent(JSON.stringify(leaveItems))}`)
+        .then(res => res.json())
+        .then(res => {
+          hideLoading();
+          if (res.result === "success") {
+            showCustomAlert("成功", res.message, "success");
+            fetchSpreadsheetData(false);
+          } else {
+            showCustomAlert("錯誤", res.message, "error");
+          }
+        })
+        .catch(err => {
+          hideLoading();
+          showCustomAlert("錯誤", "提交排休失敗", "error");
+        });
     }
 
-    // --- Modals 與互動 ---
     function openSingleLeaveModal() {
-      document.getElementById("slDate").value = document.getElementById("txtCurrentDateDisplay").innerText;
-      document.getElementById("slType").value = "特休";
-      document.getElementById("slHours").value = "8";
-      document.getElementById("slNotes").value = "";
       document.getElementById("singleLeaveModal").classList.remove("hidden");
+      var today = new Date().toISOString().split("T")[0];
+      document.getElementById("slDate").value = today;
     }
-    
+
     function closeSingleLeaveModal() {
       document.getElementById("singleLeaveModal").classList.add("hidden");
     }
 
     function submitSingleLeave() {
-      var d = document.getElementById("slDate").value;
-      var t = document.getElementById("slType").value;
-      var h = document.getElementById("slHours").value;
-      var n = document.getElementById("slNotes").value;
-      
-      if (!d) return showCustomAlert("錯誤", "請選擇日期", "error");
-      
-      showLoading("送出申請中...");
-      
-      var url = gasUrl + "?action=saveSingleLeave" +
-                "&username=" + encodeURIComponent(currentUser.username) +
-                "&date=" + encodeURIComponent(d) +
-                "&leaveType=" + encodeURIComponent(t) +
-                "&leaveHours=" + encodeURIComponent(h) +
-                "&notes=" + encodeURIComponent(n);
-                
-      fetch(url)
+      var dateStr = document.getElementById("slDate").value;
+      var type = document.getElementById("slType").value;
+      var hours = document.getElementById("slHours").value;
+      var notes = document.getElementById("slNotes").value;
+
+      if (!dateStr) {
+        showCustomAlert("提示", "請選擇日期", "warning");
+        return;
+      }
+
+      closeSingleLeaveModal();
+      showLoading("儲存請假中...");
+
+      var targetAcc = allAccounts.find(a => a.username === viewTargetUsername) || currentUser;
+      fetch(`${gasUrl}?action=saveSingleLeave&username=${encodeURIComponent(targetAcc.username)}&date=${dateStr}&leaveType=${encodeURIComponent(type)}&leaveHours=${hours}&notes=${encodeURIComponent(notes)}`)
         .then(res => res.json())
-        .then(data => {
+        .then(res => {
           hideLoading();
-          if(data.result === "success") {
-            closeSingleLeaveModal();
-            showCustomAlert("申請成功", data.message, "success");
-            fetchSpreadsheetData(true);
+          if (res.result === "success") {
+            showCustomAlert("成功", res.message, "success");
+            fetchSpreadsheetData(false);
           } else {
-            showCustomAlert("錯誤", data.message, "error");
+            showCustomAlert("錯誤", res.message, "error");
           }
         })
         .catch(err => {
           hideLoading();
-          showCustomAlert("連線錯誤", "無法連線至伺服器", "error");
+          showCustomAlert("錯誤", "儲存單日請假失敗", "error");
         });
     }
 
+    function normalizeDate(dateInput) {
+      if (!dateInput) return "";
+      var d = new Date(dateInput);
+      if (isNaN(d.getTime())) {
+        return String(dateInput).substring(0, 10);
+      }
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+
     function showLoading(text) {
-      document.getElementById("loadingText").innerText = text;
+      document.getElementById("loadingText").innerText = text || "處理中...";
       document.getElementById("loadingOverlay").classList.remove("hidden");
     }
+
     function hideLoading() {
       document.getElementById("loadingOverlay").classList.add("hidden");
     }
-    
-    function showCustomAlert(title, message, type) {
-      var iconHtml = "";
-      if (type === "success") iconHtml = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
-      else if (type === "error") iconHtml = '<i class="fa-solid fa-circle-xmark text-rose-500"></i>';
-      else if (type === "warning") iconHtml = '<i class="fa-solid fa-triangle-exclamation text-amber-500"></i>';
-      else iconHtml = '<i class="fa-solid fa-circle-info text-indigo-500"></i>';
 
-      document.getElementById("alertIcon").innerHTML = iconHtml;
+    function showCustomAlert(title, message, type) {
+      var icon = document.getElementById("alertIcon");
+      if (type === "success") {
+        icon.className = "w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 text-3xl";
+        icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+      } else if (type === "error") {
+        icon.className = "w-16 h-16 mx-auto rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4 text-3xl";
+        icon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+      } else {
+        icon.className = "w-16 h-16 mx-auto rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-4 text-3xl";
+        icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+      }
       document.getElementById("alertTitle").innerText = title;
       document.getElementById("alertMessage").innerText = message;
       document.getElementById("customAlert").classList.remove("hidden");
     }
-    
+
     function closeCustomAlert() {
       document.getElementById("customAlert").classList.add("hidden");
     }
