@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>雲端打卡考勤管理系統 V3.2</title>
+  <title>雲端打卡考勤管理系統 V3.3</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -57,7 +57,7 @@
         <i class="fa-solid fa-fingerprint text-3xl text-indigo-600"></i>
       </div>
       <h2 class="text-2xl font-black text-slate-800 mb-2 tracking-tight">系統登入</h2>
-      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤管理系統 V3.2</p>
+      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤管理系統 V3.3</p>
       
       <div class="space-y-4">
         <div class="relative">
@@ -153,7 +153,7 @@
             </div>
             <div class="flex-1">
               <div id="gpsStatusText" class="text-sm font-bold text-slate-800">定位擷取中...</div>
-              <div class="text-[11px] text-slate-500 font-medium">公司打卡範圍設定 <span id="txtCompanyRadiusDisplay" class="text-indigo-600 font-bold">200</span>m</div>
+              <div class="text-[11px] text-slate-500 font-medium">打卡半徑範圍設定 <span id="txtCompanyRadiusDisplay" class="text-indigo-600 font-bold">200</span>m</div>
             </div>
           </div>
           <button onclick="updateCurrentPositionOnly()" class="w-full sm:w-auto text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-4 py-2 rounded-xl transition flex justify-center items-center gap-1.5 shrink-0">
@@ -161,7 +161,7 @@
           </button>
         </div>
 
-        <!-- 打卡按鈕 -->
+        <!-- 打卡按鈕 (含防呆鎖定) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <button id="btnClockIn" onclick="doClockAction('clockIn')" class="relative group overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 text-white p-4 sm:p-5 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1">
             <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
@@ -255,7 +255,7 @@
 
           <!-- 切換員工 -->
           <div id="adminUserSelector" class="hidden w-full sm:w-auto">
-            <select id="selEmployee" onchange="switchEmployeeView()" class="w-full sm:w-48 bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl focus:ring-4 focus:ring-indigo-500/20 block p-2.5">
+            <select id="selEmployee" onchange="switchEmployeeView()" class="w-full sm:w-48 bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl focus:ring-4 focus:ring-indigo-500/25 block p-2.5">
             </select>
           </div>
         </div>
@@ -364,18 +364,18 @@
     </div>
   </div>
 
-  <!-- Javascript 核心邏輯 -->
+  <!-- Javascript 完整核心邏輯 (V3.3) -->
   <script>
-    var gasUrl = "https://script.google.com/macros/s/AKfycbxKsOoIStcDfKV7aj9msIuS7dsxCBhp_7OmMAH0E8HS8m-SjXczACqv-Bk3nNZS5XXy/exec";
+    var gasUrl = "https://script.google.com/macros/s/AKfycbwmMh5YrfOcvWjwt4gCqUZtafUf9NLoy0qaBaA9Uraq4kstr4N6qknGb3IXPT4MMxFg/exec";
     
     var companyLat = 24.9535;
     var companyLng = 121.2250;
     var companyRadius = 200; // 預設 200 公尺
 
-    var CACHE_KEY_ACCOUNTS = "att_app_accounts_cache_v32";
-    var CACHE_KEY_ATTENDANCE = "att_app_attendance_cache_v32";
-    var CACHE_KEY_HOLIDAYS = "att_app_holidays_cache_v32";
-    var CACHE_KEY_USER = "att_app_current_user_v32";
+    var CACHE_KEY_ACCOUNTS = "att_app_accounts_cache_v33";
+    var CACHE_KEY_ATTENDANCE = "att_app_attendance_cache_v33";
+    var CACHE_KEY_HOLIDAYS = "att_app_holidays_cache_v33";
+    var CACHE_KEY_USER = "att_app_current_user_v33";
 
     var allAccounts = [];
     var allAttendance = [];
@@ -611,7 +611,7 @@
             actionCallback(true, uLat, uLng); 
           } else {
             hideLoading();
-            showCustomAlert("打卡失敗", `您目前距離最近的打卡點還有 ${nearestDist} 公尺，已超出 200 公尺允許範圍，無法打卡。`, "error");
+            showCustomAlert("打卡失敗", `您目前距離最近的打卡點還有 ${nearestDist} 公尺，已超出允許範圍，無法打卡。`, "error");
             actionCallback(false);
           }
         },
@@ -955,7 +955,6 @@
         var hasLeave = dayRec && (dayRec.status === "排休" || dayRec.status.indexOf("假") !== -1 || dayRec.isScheduledLeave == 1 || dayRec.leaveHours > 0);
 
         if (hasClock) {
-          var clockText = dayRec.clockIn ? dayRec.clockIn : "--:--";
           var statusColor = dayRec.status.indexOf("遲到") !== -1 ? "text-amber-600 bg-amber-50" : "text-emerald-600 bg-emerald-50";
           badgeHtml = `<div class="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded ${statusColor} truncate">${dayRec.status}</div>`;
         } else if (hasLeave) {
@@ -1035,7 +1034,6 @@
 
       showLoading("提交排休中...");
       var targetAcc = allAccounts.find(a => a.username === viewTargetUsername) || currentUser;
-      var monthlyOff = targetAcc.monthlyOffDays || 8;
 
       var leaveItems = [];
       var daysInMonth = new Date(y, m + 1, 0).getDate();
