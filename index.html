@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>雲端考勤・排休管理 V6</title>
+  <title>雲端考勤・排休管理 V6.2.5</title>
   <meta name="theme-color" content="#4f46e5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -83,7 +83,7 @@
         <i class="fa-solid fa-fingerprint text-3xl text-indigo-600"></i>
       </div>
       <h2 class="text-2xl font-black text-slate-800 mb-2 tracking-tight">系統登入</h2>
-      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤與薪資管理 V5.2</p>
+      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤與薪資管理 V6.2.5</p>
       
       <div class="space-y-4">
         <div class="relative">
@@ -135,10 +135,6 @@
 
       <!-- 右側快捷按鈕 -->
       <div class="flex items-center gap-2">
-        <button onclick="openAppleGuideModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md active:scale-95" title="加入桌面捷徑教學">
-          <i class="fa-brands fa-apple text-base"></i>
-          <span class="hidden sm:inline">加到桌面</span>
-        </button>
         <button onclick="logout()" class="hidden sm:flex text-slate-500 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 w-10 h-10 rounded-full justify-center items-center transition" title="登出系統">
           <i class="fa-solid fa-right-from-bracket"></i>
         </button>
@@ -176,34 +172,34 @@
         </div>
 
         <!-- GPS 狀態 -->
-        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 mb-5">
-          <div class="flex items-center space-x-2 w-full">
+        <div class="bg-slate-50 px-3 py-2.5 sm:p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-5">
+          <div class="flex items-center space-x-2 min-w-0 flex-1">
             <div id="gpsStatusIcon" class="w-10 h-10 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center shrink-0">
               <i class="fa-solid fa-spinner fa-spin text-lg"></i>
             </div>
-            <div class="flex-1">
+            <div class="flex-1 min-w-0">
               <div id="gpsStatusText" class="text-sm font-bold text-slate-800">定位擷取中...</div>
-              <div class="text-[11px] text-slate-500 font-medium">打卡範圍設定 <span id="txtCompanyRadiusDisplay" class="text-indigo-600 font-bold">200</span>m</div>
+              <div class="text-[11px] text-slate-500 font-medium">打卡範圍：<span id="txtCompanyRadiusDisplay" class="text-indigo-600 font-bold">200m</span></div>
             </div>
           </div>
-          <button onclick="updateCurrentPositionOnly()" class="w-full sm:w-auto text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-4 py-2 rounded-xl transition flex justify-center items-center gap-1.5 shrink-0">
-            <i class="fa-solid fa-rotate"></i> 更新定位
+          <button onclick="updateCurrentPositionOnly()" aria-label="重新定位" title="重新定位" class="shrink-0 w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-2 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold rounded-lg transition flex justify-center items-center gap-1.5">
+            <i class="fa-solid fa-rotate text-sm"></i><span class="hidden sm:inline">更新定位</span>
           </button>
         </div>
 
         <!-- 打卡按鈕 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <button id="btnClockIn" onclick="doClockAction('clockIn')" class="relative group overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 text-white p-4 sm:p-5 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1">
+        <div class="grid grid-cols-2 gap-2 sm:gap-4">
+          <button id="btnClockIn" onclick="doClockAction('clockIn')" class="relative group overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 text-white px-2 py-5 sm:p-5 min-h-[110px] sm:min-h-0 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1">
             <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-            <i class="fa-solid fa-fingerprint text-3xl sm:text-4xl mb-1 relative z-10"></i>
-            <span class="font-extrabold text-base sm:text-lg tracking-wider relative z-10">上班打卡</span>
+            <i class="fa-solid fa-fingerprint text-2xl sm:text-4xl mb-1 relative z-10"></i>
+            <span class="font-extrabold text-sm sm:text-lg tracking-wider relative z-10">上班打卡</span>
             <span class="text-[10px] sm:text-xs text-emerald-100 font-medium relative z-10">(驗證 GPS 位置)</span>
           </button>
           
-          <button id="btnClockOut" onclick="doClockAction('clockOut')" class="relative group overflow-hidden bg-gradient-to-br from-rose-400 to-rose-600 text-white p-4 sm:p-5 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1">
+          <button id="btnClockOut" onclick="doClockAction('clockOut')" class="relative group overflow-hidden bg-gradient-to-br from-rose-400 to-rose-600 text-white px-2 py-5 sm:p-5 min-h-[110px] sm:min-h-0 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1">
             <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-            <i class="fa-solid fa-house-person-leave text-3xl sm:text-4xl mb-1 relative z-10"></i>
-            <span class="font-extrabold text-base sm:text-lg tracking-wider relative z-10">下班打卡</span>
+            <i class="fa-solid fa-house-person-leave text-2xl sm:text-4xl mb-1 relative z-10"></i>
+            <span class="font-extrabold text-sm sm:text-lg tracking-wider relative z-10">下班打卡</span>
             <span class="text-[10px] sm:text-xs text-rose-100 font-medium relative z-10">(驗證 GPS 位置)</span>
           </button>
         </div>
@@ -334,8 +330,7 @@
           </div>
         </div>
 
-        <div id="shiftActionGuide" class="mb-3 rounded-2xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600 flex flex-col sm:flex-row justify-between gap-2">
-          <div><b class="text-slate-800">排休操作：</b>點「開啟排休」後，直接點日期選休，再點一次取消；離開編輯會自動儲存草稿。</div>
+        <div id="shiftActionGuide" class="mb-3 text-xs flex justify-end">
           <div id="txtScheduleSaveStatus" role="status" aria-live="polite" class="font-bold text-indigo-600 shrink-0">尚未進入排休模式</div>
         </div>
         <div class="mb-3 flex items-center gap-2 text-[11px] font-bold text-slate-600">
@@ -367,6 +362,13 @@
       </div>
     </div>
 
+
+    <!-- 手機端桌面捷徑引導移至主頁頁尾，不占用上方導覽空間 -->
+    <footer class="sm:hidden pt-1 pb-4 text-center">
+      <button type="button" onclick="openAppleGuideModal()" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-indigo-700 transition" title="手機加到桌面教學">
+        <i class="fa-solid fa-mobile-screen-button"></i><span>將考勤系統加到手機桌面</span><i class="fa-solid fa-chevron-right text-[10px]"></i>
+      </button>
+    </footer>
   </div> 
 
   <!-- ================= 手機版專屬底部導覽列 ================= -->
@@ -561,7 +563,7 @@
       <div class="flex items-center justify-between"><h3 id="dayDetailTitle" class="text-lg font-black">日期明細</h3><button onclick="closeDayDetail()" class="rounded-full bg-slate-100 px-3 py-1.5 text-slate-600">✕</button></div>
       <div id="dayDetailBody" class="text-sm bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2"></div>
       <div><label class="block font-bold text-sm mb-2">當日備註（可新增或修改）</label><textarea id="dayDetailNotes" rows="3" maxlength="2000" class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm" placeholder="輸入當日備註..."></textarea></div>
-      <button id="dayDetailSaveBtn" onclick="saveDayDetailNote()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl py-3">儲存備註至 Google 試算表</button>
+      <button id="dayDetailSaveBtn" onclick="saveDayDetailNote()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl py-3">儲存備註至資料庫</button>
     </div>
   </div>
   <div id="singleLeaveModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
@@ -651,6 +653,7 @@
     var map = null;
     var companyMarkers = [];
     var companyFenceCircles = [];
+    var mappedLocationsSignature = "";
     var userMarker = null;
     var userAccCircle = null;
     var lastUserLat = null;
@@ -682,7 +685,21 @@
     };
 
     function initInteractiveMap() {
-      if (map) { setTimeout(function(){map.invalidateSize();},100); return; }
+      // 每次雲端帳號資料更新時，核對地圖標記與實際 GPS 打卡規則是否一致。
+      // 初次登入時常先載入預設位置，之後才抓到帳號設定座標；不可直接 return。
+      var newSignature = JSON.stringify(allowedLocations.map(function(loc) {
+        return [loc.lat, loc.lng, loc.radius, loc.name];
+      }));
+      if (map) {
+        if (newSignature !== mappedLocationsSignature) {
+          drawCompanyLocations();
+          mappedLocationsSignature = newSignature;
+          if (allowedLocations.length) map.setView([allowedLocations[0].lat, allowedLocations[0].lng], 16);
+          if (lastUserLat !== null && lastUserLng !== null) updateCurrentPositionOnly();
+        }
+        setTimeout(function(){if(map) map.invalidateSize(true);}, 120);
+        return;
+      }
       if (typeof L === "undefined") {
         showMapMessage("地圖元件無法載入；GPS 定位與打卡仍可使用。請檢查網路或瀏覽器的 CDN 封鎖設定。");
         return;
@@ -707,6 +724,7 @@
         setTimeout(function(){if(map) map.invalidateSize(true);},250);
 
         drawCompanyLocations();
+        mappedLocationsSignature = newSignature;
         updateCurrentPositionOnly(); 
       } catch (err) {
         console.error("Leaflet Init Error:", err);
@@ -736,8 +754,9 @@
       });
 
       allowedLocations.forEach(loc => {
+        var safeLocationName = String(loc.name || "打卡點").replace(/[&<>"']/g, function(c) {return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});
         var marker = L.marker([loc.lat, loc.lng], { icon: companyIcon }).addTo(map)
-          .bindPopup(`<b>🏢 ${loc.name}</b><br>允許半徑：${loc.radius} 公尺`);
+          .bindPopup(`<b>🏢 ${safeLocationName}</b><br>允許半徑：${loc.radius} 公尺`);
         var circle = L.circle([loc.lat, loc.lng], {
           color: "#f59e0b",
           fillColor: "#fbbf24",
@@ -968,7 +987,7 @@
         allowedLocations.push({ lat: companyLat, lng: companyLng, radius: companyRadius, name: "預設打卡點" });
       }
 
-      var rText = allowedLocations.length > 1 ? "多節點專屬定位" : (allowedLocations[0].radius + "m");
+      var rText = allowedLocations.length > 1 ? (allowedLocations.length + " 個打卡點") : (allowedLocations[0].radius + "m");
       document.getElementById("txtCompanyRadiusDisplay").innerText = rText;
 
       initInteractiveMap();
@@ -1163,7 +1182,7 @@
               clearTimeout(scheduleAutoSaveTimer);
               scheduleAutoSaveTimer = setTimeout(function() { saveCurrentScheduleDraft(); }, 500);
             }
-            if (!isSilent) showCustomAlert("同步成功", "已成功從 Google 雲端載入最新考勤紀錄！", "success");
+            if (!isSilent) showCustomAlert("同步成功", "已成功從 資料庫 雲端載入最新考勤紀錄！", "success");
           } else {
             showCustomAlert("同步失敗", data.message || "伺服器異常", "error");
           }
@@ -1448,7 +1467,7 @@
         + "&yearMonth=" + encodeURIComponent(ym) + "&leaveData=" + encodeURIComponent(JSON.stringify(dates));
       scheduleSaveQueue = scheduleSaveQueue.catch(function() {}).then(function() {
         scheduleSaving = true;
-        setScheduleStatus("↻ 正在上傳 Google 試算表...", "pending");
+        setScheduleStatus("↻ 正在上傳 資料庫...", "pending");
         return fetch(url).then(function(res) { return res.json(); }).then(function(res) {
           if (res.result === "locked") {
             throw new Error("該月份已由其他裝置提交鎖定，請重新同步");
@@ -1479,7 +1498,7 @@
     function flushScheduleBeforeNavigation(onSuccess) {
       clearTimeout(scheduleAutoSaveTimer);
       if (!isCurrentDraftDirty()) { onSuccess(); return; }
-      showLoading("正在自動儲存排休草稿至 Google 試算表...");
+      showLoading("正在自動儲存排休草稿至 資料庫...");
       saveCurrentScheduleDraft().then(function(ok) {
         hideLoading();
         if (ok && !isCurrentDraftDirty()) onSuccess();
