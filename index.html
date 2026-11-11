@@ -1,0 +1,2429 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>雲端考勤・排休管理 V6.6</title>
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="雲端考勤">
+  <meta name="application-name" content="雲端考勤">
+  <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABQ0lEQVR4nGNkQAOiEVf+o4tRE7xeocOIzGeip+XY7GDCJUEvRzARsvzVcm2GV8u1SbaEkD6YnYyELEcGYpFXibacWH0s6AL3P9Qg8dbjkcMHcOtTFGhBkWPCpZBWAN0OJhzq6AbwOuCrZyBWNiFAij6MNIDPMFIAsfoGdxTQA6BEAff29bjUURcglQuDKwSQwa1nP7CKq0lxkC2HDQx4CAy4AwiWA+QA233BKPzDTmvp4wDxJd54HfQyZivxDsCVaHDJ4bIcXQ26I6iaC/CBlzFbsTqSKokQPc7xWY7uCKrmAmxxjMvnNHEAehwTspzqDkAGxFhONQcg53NYKOCynOhcQGo2RAbE+BwGqBYF2BIgMWoYGRhQOybkdELQAXoIIFuM3Ed4vUKHEd5RpGfXDGY5AwNSFKD3WulhOYoD6OUIdDsAc02NqC+xmrMAAAAASUVORK5CYII=">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192-v66.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon-v66.png">
+  <link rel="manifest" href="./manifest-v66.webmanifest">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet.js 互動地圖 -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>if (typeof L === 'undefined') document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"><\/script>');</script>
+
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.6);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .nav-tab-active {
+      background-color: #ffffff;
+      color: #4f46e5 !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      font-weight: 700;
+    }
+    #liveMap { z-index: 10; }
+    .leaflet-control-attribution { display: none !important; }
+
+    .modal-backdrop-fade {
+      transition: opacity 0.3s ease-out;
+    }
+    .modal-content-scale {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .calendar-day-interactive {
+      cursor: pointer;
+      user-select: none;
+    }
+    .calendar-day-interactive:hover {
+      border-color: #6366f1 !important;
+      background-color: #e0e7ff !important;
+    }
+    @keyframes v65ScheduleBlink {0%,100%{opacity:1}50%{opacity:.35}}
+    .v65-schedule-blink{animation:v65ScheduleBlink 1.3s ease-in-out infinite}
+    @media(prefers-reduced-motion:reduce){.v65-schedule-blink{animation:none}}
+  </style>
+</head>
+<body class="text-slate-800 antialiased pb-20 sm:pb-6">
+
+  <!-- ================= 登入畫面 ================= -->
+  <div id="loginOverlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 bg-opacity-95 backdrop-blur-md px-4">
+    <div class="glass-panel p-8 sm:p-10 rounded-3xl w-full max-w-sm shadow-2xl relative overflow-hidden text-center">
+      <div class="w-16 h-16 bg-indigo-100 rounded-2xl mx-auto flex items-center justify-center mb-6 transform rotate-3">
+        <i class="fa-solid fa-fingerprint text-3xl text-indigo-600"></i>
+      </div>
+      <h2 class="text-2xl font-black text-slate-800 mb-2 tracking-tight">系統登入</h2>
+      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤與薪資管理 V5.2</p>
+      
+      <div class="space-y-4">
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <i class="fa-regular fa-user text-slate-400"></i>
+          </div>
+          <input type="text" id="loginUsername" placeholder="輸入使用者帳號" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 block pl-10 p-3.5 transition">
+        </div>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <i class="fa-solid fa-lock text-slate-400"></i>
+          </div>
+          <input type="password" id="loginPassword" placeholder="輸入密碼" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 block pl-10 p-3.5 transition" onkeypress="if(event.key === 'Enter') handleLogin()">
+        </div>
+        <label class="flex items-center gap-2 text-xs text-slate-600 font-semibold cursor-pointer"><input id="rememberDevice" type="checkbox" checked class="accent-indigo-600 w-4 h-4"> 記住此裝置（30 天免重新輸入密碼）</label>
+        <button onclick="handleLogin()" class="w-full text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-bold rounded-xl text-sm px-5 py-3.5 text-center transition shadow-lg shadow-indigo-500/30 active:scale-[0.98]">
+          安全登入 <i class="fa-solid fa-arrow-right-to-bracket ml-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 主系統介面 ================= -->
+  <div id="mainApp" class="hidden max-w-5xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 relative">
+    
+    <!-- 頂部導航 -->
+    <div class="glass-panel p-3 sm:p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-600 text-white rounded-xl flex justify-center items-center font-bold text-lg sm:text-xl shadow-md">
+          <span id="txtUserInitials">?</span>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+            <span id="txtWelcomeName">歡迎回來</span><span class="text-[9px] text-indigo-500 font-bold ml-1">V6.6</span>
+            <span id="roleBadge" class="hidden bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-amber-200">Admin</span>
+          </h1>
+          <p class="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5">今天也要活力滿滿喔！🚀</p>
+        </div>
+      </div>
+      
+      <!-- 桌面版分頁標籤 -->
+      <div class="hidden sm:flex bg-indigo-600 p-1.5 rounded-2xl shadow-inner gap-1">
+        <button id="tabBtnDaily" onclick="switchTab('daily')" class="nav-tab-active px-5 py-2 rounded-xl transition flex items-center gap-2 text-sm">
+          <i class="fa-solid fa-location-dot"></i> GPS 打卡首頁
+        </button>
+        <button id="tabBtnSummary" onclick="switchTab('summary')" class="text-indigo-100 hover:text-white px-5 py-2 rounded-xl transition flex items-center gap-2 text-sm font-medium">
+          <i class="fa-regular fa-calendar-days"></i> 考勤總表與排班
+        </button>
+      </div>
+
+      <!-- 右側快捷按鈕 -->
+      <div class="flex items-center gap-2">
+        <button onclick="logout()" class="hidden sm:flex text-slate-500 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 w-10 h-10 rounded-full justify-center items-center transition" title="登出系統">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= 頁籤 1: 每日 GPS 打卡 ================= -->
+    <div id="viewDailyContainer" class="space-y-4">
+      <div class="glass-panel rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-200">
+        
+        <div class="flex justify-between items-center mb-4 pl-1">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-800">今日出勤打卡</h2>
+            <p id="txtCurrentDateDisplay" class="text-xs text-slate-500 font-medium">2026-01-01</p>
+          </div>
+        </div>
+
+        <!-- 地圖視窗 -->
+        <div class="relative rounded-2xl overflow-hidden border-2 border-slate-200 shadow-sm mb-4">
+          <div id="liveMap" class="w-full h-[220px] sm:h-[300px] z-10 bg-slate-100"></div>
+          
+          <div class="absolute top-2 right-2 z-[400] flex flex-col space-y-2">
+            <button onclick="centerMapOnUser()" class="bg-white/90 hover:bg-white text-slate-700 p-2.5 rounded-xl shadow-md border border-slate-200 text-xs font-bold transition flex items-center justify-center" title="看我的位置">
+              <i class="fa-solid fa-location-crosshairs text-indigo-600 text-lg"></i>
+            </button>
+            <button onclick="centerMapOnCompany()" class="bg-white/90 hover:bg-white text-slate-700 p-2.5 rounded-xl shadow-md border border-slate-200 text-xs font-bold transition flex items-center justify-center" title="看公司位置">
+              <i class="fa-solid fa-building-flag text-rose-500 text-lg"></i>
+            </button>
+          </div>
+
+          <div class="bg-slate-800 text-white px-3 py-2 text-[11px] flex justify-between items-center">
+            <div id="mapInfoPos" class="font-mono text-slate-300 truncate">目前座標：擷取中...</div>
+            <div id="mapInfoAcc" class="text-amber-300 font-bold shrink-0 ml-2">精確度：--</div>
+          </div>
+        </div>
+
+        <!-- GPS 狀態 -->
+        <div class="bg-slate-50 px-3 py-2.5 sm:p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-5">
+          <div class="flex items-center space-x-2 min-w-0 flex-1">
+            <div id="gpsStatusIcon" class="w-10 h-10 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-spinner fa-spin text-lg"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div id="gpsStatusText" class="text-sm font-bold text-slate-800">定位擷取中...</div>
+              <div class="text-[11px] text-slate-500 font-medium">打卡範圍：<span id="txtCompanyRadiusDisplay" class="text-indigo-600 font-bold">200m</span></div>
+            </div>
+          </div>
+          <button onclick="updateCurrentPositionOnly()" aria-label="重新定位" title="重新定位" class="shrink-0 w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-2 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold rounded-lg transition flex justify-center items-center gap-1.5">
+            <i class="fa-solid fa-rotate text-sm"></i><span class="hidden sm:inline">更新定位</span>
+          </button>
+        </div>
+
+        <div id="v66GpsHelp" class="hidden mb-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed" role="alert">
+          <div id="v66GpsHelpText" class="font-semibold">GPS 未取得授權。</div>
+          <button onclick="v66ManualLocate()" class="mt-2 bg-indigo-600 text-white rounded-lg px-3 py-2 font-bold">重新要求定位</button>
+        </div>
+        <div id="v66LocationSource" class="mb-3 text-[11px] text-slate-500 font-semibold"></div>
+        <!-- 打卡按鈕 -->
+        <div class="grid grid-cols-2 gap-2 sm:gap-4">
+          <button id="btnClockIn" onclick="doClockAction('clockIn')" class="relative group overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 text-white px-2 py-5 sm:p-5 min-h-[110px] sm:min-h-0 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1">
+            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+            <i class="fa-solid fa-fingerprint text-2xl sm:text-4xl mb-1 relative z-10"></i>
+            <span class="font-extrabold text-sm sm:text-lg tracking-wider relative z-10">上班打卡</span>
+            <span class="text-[10px] sm:text-xs text-emerald-100 font-medium relative z-10">(驗證 GPS 位置)</span>
+          </button>
+          
+          <button id="btnClockOut" onclick="doClockAction('clockOut')" class="relative group overflow-hidden bg-gradient-to-br from-rose-400 to-rose-600 text-white px-2 py-5 sm:p-5 min-h-[110px] sm:min-h-0 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1">
+            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+            <i class="fa-solid fa-house-person-leave text-2xl sm:text-4xl mb-1 relative z-10"></i>
+            <span class="font-extrabold text-sm sm:text-lg tracking-wider relative z-10">下班打卡</span>
+            <span class="text-[10px] sm:text-xs text-rose-100 font-medium relative z-10">(驗證 GPS 位置)</span>
+          </button>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-2">
+          <button onclick="openForgetClockModal()" class="flex-1 bg-amber-50 hover:bg-amber-100 text-amber-700 p-3 rounded-xl font-bold text-sm transition shadow-sm border border-amber-200 flex justify-center items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-amber-500"></i> 忘刷補打卡申請
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ================= 頁籤 2: 考勤總表與排班 ================= -->
+    <div id="viewSummaryContainer" class="hidden space-y-4">
+      
+      <!-- 管理員忘刷審核專區 -->
+      <div id="adminPendingAuditPanel" class="hidden glass-panel p-4 sm:p-5 rounded-3xl border-2 border-amber-200 bg-amber-50/40 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm sm:text-base font-black text-amber-900 flex items-center gap-2">
+            <i class="fa-solid fa-bell text-amber-500 animate-bounce"></i> 忘刷補打卡待審核清單
+            <span id="txtPendingCount" class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+          </h3>
+          <span class="text-[11px] font-bold text-amber-700">管理員專屬審核權限</span>
+        </div>
+        <div id="pendingAuditList" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar"></div>
+      </div>
+
+      <!-- 統計數據 -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div class="glass-panel p-4 sm:p-5 rounded-2xl border border-rose-100 shadow-sm">
+          <div class="flex items-center gap-2 mb-2 text-rose-500">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <h3 class="text-xs sm:text-sm font-bold">遲到 / 早退 (未補足)</h3>
+          </div>
+          <div class="flex items-end gap-1">
+            <span id="statLateCount" class="text-2xl sm:text-3xl font-black text-slate-800">0</span>
+            <span class="text-xs text-slate-500 mb-1 font-medium">次</span>
+          </div>
+          <div class="text-[10px] sm:text-xs text-slate-400 mt-1">扣薪總計 <span id="statLateMinutes" class="font-bold text-rose-500">0</span> 分鐘</div>
+        </div>
+
+        <!-- 可點擊跳出加班試算 Modal -->
+        <div onclick="openOvertimeSalaryModal()" class="glass-panel p-4 sm:p-5 rounded-2xl border border-indigo-100 shadow-sm cursor-pointer hover:border-indigo-300 transition group">
+          <div class="flex items-center justify-between mb-2 text-indigo-500">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-business-time"></i>
+              <h3 class="text-xs sm:text-sm font-bold">本月加班時數</h3>
+            </div>
+            <i class="fa-solid fa-calculator text-xs opacity-0 group-hover:opacity-100 transition"></i>
+          </div>
+          <div class="flex items-end gap-1">
+            <span id="statOvertime" class="text-2xl sm:text-3xl font-black text-slate-800">0</span>
+            <span class="text-xs text-slate-500 mb-1 font-medium">小時</span>
+          </div>
+          <div class="text-[10px] sm:text-xs text-indigo-500 mt-1 font-bold">點擊試算加班費 💰</div>
+        </div>
+
+        <div class="glass-panel p-4 sm:p-5 rounded-2xl border border-amber-100 shadow-sm">
+          <div class="flex items-center gap-2 mb-2 text-amber-500">
+            <i class="fa-solid fa-file-medical"></i>
+            <h3 class="text-xs sm:text-sm font-bold">本月請假 / 排休</h3>
+          </div>
+          <div class="flex items-end gap-1">
+            <span id="statLeaveDays" class="text-2xl sm:text-3xl font-black text-slate-800">0</span>
+            <span class="text-xs text-slate-500 mb-1 font-medium">天</span>
+          </div>
+        </div>
+        <div class="glass-panel p-4 sm:p-5 rounded-2xl border border-emerald-100 shadow-sm">
+          <div class="flex items-center justify-between mb-2 text-emerald-500">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-mug-hot"></i>
+              <h3 class="text-xs sm:text-sm font-bold">年度特休</h3>
+            </div>
+            <span id="statSpecialLeaveInitial" class="bg-emerald-100 text-emerald-700 text-[9px] px-1.5 py-0.5 rounded font-bold">本期 0天</span>
+          </div>
+          <div class="flex items-end gap-1">
+            <span id="statSpecialLeave" class="text-2xl sm:text-3xl font-black text-slate-800">0</span>
+            <span class="text-xs text-slate-500 mb-1 font-medium">小時剩餘</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 月曆與排班系統 -->
+      <div class="glass-panel rounded-3xl p-2.5 sm:p-6 shadow-sm min-w-0 overflow-hidden flex flex-col">
+        <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 sm:gap-4 border-b border-slate-100 pb-3 mb-3">
+          <div class="flex items-center justify-center sm:justify-start gap-3">
+            <button onclick="changeMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-600 transition">
+              <i class="fa-solid fa-chevron-left text-sm"></i>
+            </button>
+            <h2 id="calendarMonthLabel" class="text-lg sm:text-xl font-black text-slate-800 tracking-tight w-24 text-center">2026-01</h2>
+            <button onclick="changeMonth(1)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-600 transition">
+              <i class="fa-solid fa-chevron-right text-sm"></i>
+            </button>
+          </div>
+
+          <!-- 管理員選擇員工放在月曆表頭，操作按鈕統一置於月曆下方 -->
+          <div id="adminUserSelector" class="hidden min-w-0 w-full sm:w-auto">
+            <select id="selEmployee" onchange="switchEmployeeView()" class="w-full max-w-full sm:max-w-[190px] min-w-0 bg-slate-50 border border-slate-200 text-slate-700 text-[11px] sm:text-sm font-bold rounded-xl focus:ring-4 focus:ring-indigo-500/25 block p-2 truncate"></select>
+          </div>
+        </div>
+
+        <!-- 排班防呆提示與資訊列 -->
+        <div id="shiftModeInfoBar" class="mb-4 bg-indigo-50 border border-indigo-200 rounded-2xl p-3 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs">
+          <div class="flex items-center gap-2 font-bold text-indigo-900">
+            <span id="txtWorkTypeBadge" class="bg-indigo-600 text-white px-2 py-0.5 rounded text-[11px]">標準週休二日</span>
+            <span id="txtShiftPolicyDesc">週六日與國定假日休假</span>
+          </div>
+          <div id="txtShiftCounterDisplay" class="font-extrabold text-indigo-700 hidden">
+            已選 <span id="lblSelectedOffDays" class="text-emerald-600">0</span> / <span id="lblMaxOffDays" class="text-slate-900">0</span> 天，<span id="lblRemainingOffDays" class="text-amber-700">剩餘 0 天</span>
+          </div>
+        </div>
+
+        <div id="v65ScheduleReminder" class="hidden mb-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-extrabold text-amber-900" role="status" aria-live="polite"><i class="fa-solid fa-bell mr-1"></i>輪休／排班制點選月曆中的日期，可直接安排本月休假。</div>
+        <div id="shiftActionGuide" class="mb-2 text-[11px] flex justify-end">
+          <div id="txtScheduleSaveStatus" role="status" aria-live="polite" class="font-bold text-indigo-600 shrink-0">尚未進入排休模式</div>
+        </div>
+        <div class="mb-3 flex items-center gap-2 text-[11px] font-bold text-slate-600">
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700">✓ 已選排休</span>
+          <span class="px-2.5 py-1 rounded-lg bg-white border text-slate-600">上班日</span>
+          <span class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800">● 尚未同步</span>
+          <span id="shiftLockTag" class="ml-auto hidden px-2.5 py-1 rounded-lg bg-slate-800 text-white">🔒 本月已鎖定</span>
+        </div>
+        <div class="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
+          <div class="text-center text-[10px] sm:text-xs font-black text-rose-500 py-1">週日</div>
+          <div class="text-center text-[10px] sm:text-xs font-black text-slate-500 py-1">週一</div>
+          <div class="text-center text-[10px] sm:text-xs font-black text-slate-500 py-1">週二</div>
+          <div class="text-center text-[10px] sm:text-xs font-black text-slate-500 py-1">週三</div>
+          <div class="text-center text-[10px] sm:text-xs font-black text-slate-500 py-1">週四</div>
+          <div class="text-center text-[10px] sm:text-xs font-black text-slate-500 py-1">週五</div>
+          <div class="text-center text-[10px] sm:text-xs font-black text-indigo-500 py-1">週六</div>
+        </div>
+        
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-2 auto-rows-fr"></div>
+
+        <!-- V6.6：唯一操作列，保持在月曆最下方；此處不能再另放排班或提交按鈕 -->
+        <div id="v66CalendarActions" class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
+          <button onclick="openPayrollModal()" class="min-w-0 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-3 text-xs sm:text-sm font-bold flex justify-center items-center gap-1.5"><i class="fa-solid fa-file-invoice-dollar"></i><span>薪資報表</span></button>
+          <button onclick="openSingleLeaveModal()" class="min-w-0 rounded-xl bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 px-2 py-3 text-xs sm:text-sm font-bold flex justify-center items-center gap-1.5"><i class="fa-solid fa-file-signature"></i><span>請假／特休</span></button>
+          <button id="btnToggleShiftMode" onclick="v65SchedulePrimaryAction()" class="min-w-0 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-3 text-xs sm:text-sm font-bold flex justify-center items-center gap-1.5"><i class="fa-solid fa-calendar-check"></i><span id="txtShiftModeBtnLabel">排班模式</span></button>
+          <button onclick="fetchSpreadsheetData(false)" class="min-w-0 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-2 py-3 text-xs sm:text-sm font-bold flex justify-center items-center gap-1.5"><i class="fa-solid fa-cloud-arrow-down text-indigo-500"></i><span>重新載入</span></button>
+        </div>
+        <!-- 舊提交按鈕僅供既有 JS 相容，無可見第二排班入口 -->
+        <button id="btnSaveShiftSubmit" type="button" class="hidden" aria-hidden="true" tabindex="-1"><span id="txtFinalizeShift"></span></button>
+      </div>
+    </div>
+
+
+    <!-- 手機端桌面捷徑引導移至主頁頁尾，不占用上方導覽空間 -->
+    <footer class="sm:hidden pt-1 pb-4 text-center">
+      <button type="button" onclick="openAppleGuideModal()" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-indigo-700 transition" title="手機加到桌面教學">
+        <i class="fa-solid fa-mobile-screen-button"></i><span>將考勤系統加到手機桌面 · V6.6</span><i class="fa-solid fa-chevron-right text-[10px]"></i>
+      </button>
+    </footer>
+  </div> 
+
+  <!-- ================= 手機版專屬底部導覽列 ================= -->
+  <div id="mobileBottomNav" class="sm:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-40 pb-safe">
+    <div class="flex justify-around items-center h-16 px-2">
+      <button id="mobileNavDaily" onclick="switchTab('daily')" class="flex flex-col items-center justify-center w-full h-full text-indigo-600 font-bold text-[11px] space-y-1 transition">
+        <i class="fa-solid fa-location-dot text-lg"></i>
+        <span>打卡首頁</span>
+      </button>
+      <button id="mobileNavSummary" onclick="switchTab('summary')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-600 font-medium text-[11px] space-y-1 transition">
+        <i class="fa-regular fa-calendar-days text-lg"></i>
+        <span>考勤總表</span>
+      </button>
+      <button onclick="logout()" class="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-rose-500 font-medium text-[11px] space-y-1 transition">
+        <i class="fa-solid fa-right-from-bracket text-lg"></i>
+        <span>登出</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= 互動彈窗 ================= -->
+  
+  <!-- 加班費試算 Modal (V6) -->
+  <div id="overtimeSalaryModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+    <div class="glass-panel p-6 rounded-3xl w-full max-w-md shadow-2xl relative border border-white">
+      <button onclick="closeOvertimeSalaryModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <h3 class="text-lg font-black text-slate-800 mb-1 flex items-center gap-2">
+        <i class="fa-solid fa-calculator text-indigo-600"></i> 本月加班費試算 (勞基法)
+      </h3>
+      <p class="text-xs text-slate-500 mb-4 font-medium">依據勞基法延伸工時倍率 (前2小時1.34 / 3~4小時1.67)</p>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">月薪金額 (NT$)</label>
+          <input type="number" id="inputMonthlySalary" value="0" readonly class="w-full bg-slate-50 border border-slate-200 text-sm font-bold rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500">
+          <div class="text-[11px] text-slate-400 mt-1">預設時薪算式：月薪 ÷ 30天 ÷ 8小時 = <b id="lblHourlyRate" class="text-slate-700">150</b> 元/小時</div>
+        </div>
+
+        <div class="bg-indigo-50/70 p-3.5 rounded-2xl border border-indigo-100 space-y-2 text-xs">
+          <div class="flex justify-between items-center text-slate-700 font-medium">
+            <span>前 2 小時加班 (1.34倍)：</span>
+            <span class="font-bold font-mono"><span id="lblOtTier1Hours">0</span> 小時 × 1.34 = <span id="lblOtTier1Amount" class="text-indigo-600 font-extrabold">0</span> 元</span>
+          </div>
+          <div class="flex justify-between items-center text-slate-700 font-medium">
+            <span>第 3~4 小時加班 (1.67倍)：</span>
+            <span class="font-bold font-mono"><span id="lblOtTier2Hours">0</span> 小時 × 1.67 = <span id="lblOtTier2Amount" class="text-indigo-600 font-extrabold">0</span> 元</span>
+          </div>
+          <div class="pt-2 border-t border-indigo-200/60 flex justify-between items-center text-sm font-black text-slate-800">
+            <span>本月加班費合計：</span>
+            <span class="text-indigo-600 text-base font-extrabold font-mono">$<span id="lblOtTotalAmount">0</span> 元</span>
+          </div>
+        </div>
+
+        <button onclick="closeOvertimeSalaryModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm px-5 py-3 transition shadow-md">
+          確定關閉
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- V6 薪資報表與管理員獎金設定 -->
+  <div id="payrollModal" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm px-2 sm:px-4">
+    <div class="bg-white rounded-3xl w-full max-w-3xl max-h-[94vh] flex flex-col shadow-2xl border border-slate-200">
+      <div class="px-5 py-4 border-b flex justify-between items-center gap-3">
+        <div><h3 class="font-black text-lg">V6.4 月度薪資結算</h3><p id="payrollMonthTitle" class="text-xs text-slate-500"></p></div>
+        <button onclick="closePayrollModal()" class="bg-slate-100 rounded-full w-9 h-9 text-slate-600" title="關閉"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="px-5 py-4 overflow-y-auto flex-1 space-y-4">
+        <div class="flex flex-wrap gap-2 items-center">
+          <button onclick="generatePayrollReport()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">重新計算本月</button>
+          <button id="v6AdminAllBtn" onclick="v6LoadAllPayroll()" class="hidden px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">全員薪資與公司成本</button>
+          <button id="v6AdminBonusBtn" onclick="v6ToggleBonusEditor()" class="hidden px-4 py-2 bg-amber-100 text-amber-900 rounded-xl text-xs font-bold"><i class="fa-solid fa-plus"></i> 獎金清單管理</button>
+        </div>
+        <div class="flex flex-wrap gap-4 items-center rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm">
+          <span class="font-bold text-slate-700">薪資結算項目</span>
+          <label class="inline-flex items-center gap-2 cursor-pointer"><input id="v622IncludeLate" type="checkbox" checked onchange="v622RefreshReport()" class="accent-indigo-600 w-4 h-4"> 計入遲到扣薪</label>
+          <label class="inline-flex items-center gap-2 cursor-pointer"><input id="v622IncludeOT" type="checkbox" checked onchange="v622RefreshReport()" class="accent-indigo-600 w-4 h-4"> 計入加班費</label>
+        </div>
+        <div id="v6PayrollStatus" class="text-xs text-slate-500" role="status"></div>
+        <div id="v6BonusEditor" class="hidden p-4 rounded-2xl bg-indigo-50 border border-indigo-100 space-y-3">
+          <h4 class="font-bold text-indigo-900">獎金清單設定｜新增、編輯、啟用或停用</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div><label class="text-xs font-bold">類型</label><select id="v6BonusKind" class="w-full border rounded-lg p-2 text-sm" onchange="v6BonusKindChanged()"><option>非固定獎金</option><option>固定補貼</option></select></div>
+            <div><label class="text-xs font-bold">名稱</label><input id="v6BonusTitle" placeholder="例：績效獎金、交通津貼" class="w-full border rounded-lg p-2 text-sm"></div>
+            <div><label class="text-xs font-bold">金額（元）</label><input id="v6BonusAmount" type="number" min="0" step="1" class="w-full border rounded-lg p-2 text-sm"></div>
+            <div><label class="text-xs font-bold">指定日期（選填）</label><input id="v6BonusDate" type="date" class="w-full border rounded-lg p-2 text-sm"></div>
+          </div>
+          <div class="flex flex-wrap items-center gap-4 text-sm"><label><input type="checkbox" id="v6BonusRecurring"> 固定補貼每月自動套用</label><label><input type="checkbox" id="v6BonusActive" checked> 啟用計算</label></div>
+          <div><label class="text-xs font-bold">備註</label><input id="v6BonusNotes" class="w-full border rounded-lg p-2 text-sm" placeholder="選填"></div>
+          <button id="v61ListSaveBtn" onclick="v6SaveBonus()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold">+ 新增並儲存</button>
+          <div id="v6BonusRows" class="space-y-2 text-xs"></div>
+        </div>
+        <div id="v6PayrollResult" class="text-sm">讀取中...</div>
+      </div>
+      <div class="px-5 py-3 border-t flex gap-2 justify-end">
+        <button onclick="v6PrintPayroll()" class="bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl">列印目前報表</button>
+        <button id="v6CsvBtn" onclick="v6ExportPayrollCsv()" class="hidden bg-emerald-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl">匯出全員 CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- V6.2 單日獎金快速輸入：與清單管理完全獨立 -->
+  <div id="v61QuickBonusModal" class="hidden fixed inset-0 z-[145] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-labelledby="v61QuickHeading">
+    <div class="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl space-y-4">
+      <div class="flex justify-between items-start"><div><h3 id="v61QuickHeading" class="text-lg font-black">單日快速新增獎金</h3><p id="v61QuickDay" class="text-xs text-slate-500 mt-1"></p></div><button onclick="v61CloseQuick()" class="bg-slate-100 rounded-full w-9 h-9" aria-label="關閉"><i class="fa-solid fa-xmark"></i></button></div>
+      <div><label class="block text-xs font-bold mb-1">獎金名稱</label><input id="v61QuickTitle" maxlength="80" class="w-full border rounded-xl p-3 text-sm" placeholder="例：今日成交獎金"></div>
+      <div><label class="block text-xs font-bold mb-1">獎金金額（NT$）</label><input id="v61QuickAmount" type="number" min="0" step="1" inputmode="numeric" class="w-full border rounded-xl p-3 text-lg font-black" placeholder="輸入金額"></div>
+      <div><label class="block text-xs font-bold mb-1">備註（選填）</label><input id="v61QuickNotes" maxlength="300" class="w-full border rounded-xl p-3 text-sm" placeholder="說明這筆獎金"></div>
+      <p class="text-xs text-slate-500">單日快速新增固定記為「非固定獎金」。如需每月固定補貼、批次編輯或停用，請使用薪資頁面的「獎金清單管理」。</p>
+      <button id="v61QuickSaveBtn" onclick="v61SaveQuick()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-3 rounded-xl">確認新增並上傳</button>
+    </div>
+  </div>
+  <!-- 只有伺服器確認成功才顯示 100%，等待時為不確定進度 -->
+  <div id="v61UploadModal" class="hidden fixed inset-0 z-[190] bg-slate-950/75 flex items-center justify-center px-4" role="status" aria-live="polite">
+    <div class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-3">
+      <div id="v61UploadIcon" class="text-center text-indigo-600 text-3xl"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+      <h3 id="v61UploadHeading" class="text-center text-lg font-black">正在上傳獎金資料</h3>
+      <p id="v61UploadMessage" class="text-center text-xs text-slate-500">正在等候伺服器回應，請勿重複送出</p>
+      <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden"><div id="v61UploadBar" class="v61-upload-indeterminate h-full bg-indigo-600 rounded-full"></div></div>
+      <p id="v61UploadPercent" class="text-center text-xs text-slate-500">傳送中（等候確認）</p>
+      <button id="v61UploadDone" onclick="v61UploadClose()" class="hidden w-full rounded-xl bg-indigo-600 py-3 text-white font-bold">完成</button>
+    </div>
+  </div>
+  <style>
+    @keyframes v61Uploading {from{transform:translateX(-100%)}to{transform:translateX(300%)}}
+    .v61-upload-indeterminate{width:32%;animation:v61Uploading 1.1s ease-in-out infinite}
+    @media (prefers-reduced-motion: reduce){.v61-upload-indeterminate{animation-duration:2s}}
+  </style>
+  <div id="appleGuideModal" class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-slate-900/70 backdrop-blur-md px-4 opacity-0 modal-backdrop-fade">
+    <div id="appleGuideContent" class="glass-panel p-5 sm:p-6 rounded-3xl w-full max-w-md shadow-2xl relative border border-white/60 transform scale-95 modal-content-scale max-h-[90vh] flex flex-col">
+      <button onclick="closeAppleGuideModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center z-10 transition">
+        <i class="fa-solid fa-xmark text-base"></i>
+      </button>
+      <div class="text-center mb-3">
+        <div class="w-11 h-11 bg-slate-900 text-white rounded-2xl mx-auto flex items-center justify-center mb-2 text-xl shadow-md">
+          <i class="fa-brands fa-apple"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-800 tracking-tight">將考勤系統加入手機桌面</h3>
+      </div>
+      <div class="overflow-y-auto custom-scrollbar flex-1 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 space-y-2">
+        <p>1. 在 iPhone 上使用 <b>Safari</b> 瀏覽器開啟本網頁。</p>
+        <p>2. 點擊下方工具列的 <b>「分享」</b> 按鈕（正方形帶向上箭頭）。</p>
+        <p>3. 捲動選單並點選 <b>「加入主畫面」</b>。</p>
+        <p>4. 點擊右上角「新增」，即可在桌面產生 App 圖示！</p>
+      </div>
+      <div class="mt-4 pt-3 border-t border-slate-100">
+        <button onclick="closeAppleGuideModal()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl py-3 text-xs transition shadow-md">
+          我知道了
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- V6.5 排班流程選擇：單一入口；避免把「取消」誤當直接鎖定 -->
+  <div id="v65ScheduleChoiceModal" class="hidden fixed inset-0 z-[155] bg-slate-900/65 px-4 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="v65ScheduleChoiceTitle">
+    <div class="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl space-y-3">
+      <h3 id="v65ScheduleChoiceTitle" class="text-lg font-black text-slate-900">本月排班設定</h3>
+      <p class="text-sm text-slate-600">請選擇這個月的處理方式。完成後將鎖定該月，無法自行修改。</p>
+      <button onclick="v65ChooseSchedule('edit')" class="w-full rounded-xl bg-indigo-600 text-white py-3 font-bold"><i class="fa-solid fa-calendar-days mr-2"></i>進入排班，點選休假日期</button>
+      <button onclick="v65ChooseSchedule('none')" class="w-full rounded-xl border border-slate-300 bg-slate-50 text-slate-800 py-3 font-bold"><i class="fa-solid fa-lock mr-2"></i>本月無需排班，直接鎖定</button>
+      <button onclick="v65ChooseSchedule('cancel')" class="w-full py-2 text-sm text-slate-500">返回月曆</button>
+    </div>
+  </div>
+  <div id="forgetClockModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+    <div class="glass-panel p-6 rounded-3xl w-full max-w-sm shadow-2xl relative">
+      <button onclick="closeForgetClockModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <h3 class="text-lg font-black text-slate-800 mb-4"><i class="fa-solid fa-clock-rotate-left text-amber-500 mr-2"></i>忘刷補打卡申請</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">忘刷日期</label>
+          <input type="date" id="fcDate" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">補打卡類型</label>
+          <select id="fcType" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 font-medium">
+            <option value="clockIn">☀️ 補上班打卡</option>
+            <option value="clockOut">🌙 補下班打卡</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">實際時間</label>
+          <input type="time" id="fcTime" value="09:00" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 font-mono">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">事由說明</label>
+          <input type="text" id="fcReason" placeholder="例如：忘記打卡、手機沒電" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <button onclick="submitForgetClock()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm px-5 py-3 transition shadow-md flex justify-center items-center gap-2 mt-2">
+          <i class="fa-solid fa-paper-plane"></i> 送出申請
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- V6 每日考勤明細 -->
+  <div id="dayDetailModal" class="hidden fixed inset-0 z-[115] flex items-center justify-center bg-slate-900/65 backdrop-blur-sm px-4">
+    <div class="glass-panel bg-white p-5 sm:p-6 rounded-3xl w-full max-w-md shadow-2xl space-y-4">
+      <div class="flex items-center justify-between"><h3 id="dayDetailTitle" class="text-lg font-black">日期明細</h3><button onclick="closeDayDetail()" class="rounded-full bg-slate-100 px-3 py-1.5 text-slate-600">✕</button></div>
+      <div id="dayDetailBody" class="text-sm bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2"></div>
+      <div id="v64DayActions" class="space-y-2">
+        <div class="text-sm font-extrabold text-slate-700">選擇當日操作</div>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="v64LeaveAction" type="button" onclick="v64OpenLeaveForDay()" class="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white px-3 py-3 text-sm font-bold"><i class="fa-solid fa-file-signature"></i> 請假</button>
+          <button id="v65ForgetAction" type="button" onclick="v65OpenForgetForDay()" class="hidden flex items-center justify-center gap-2 rounded-xl bg-amber-100 text-amber-900 px-3 py-3 text-sm font-bold"><i class="fa-solid fa-clock-rotate-left"></i> 忘刷補卡</button>
+          <button id="v64NoteAction" type="button" onclick="v64ShowDayNote()" class="flex items-center justify-center gap-2 rounded-xl bg-slate-100 text-slate-800 px-3 py-3 text-sm font-bold"><i class="fa-solid fa-pen-to-square"></i> 備註</button>
+          <button id="v6DayBonusBtn" type="button" class="hidden flex items-center justify-center gap-2 rounded-xl bg-amber-100 text-amber-900 px-3 py-3 text-sm font-bold"><i class="fa-solid fa-gift"></i> 發放獎金</button>
+          <button id="v623AbsenceBtn" type="button" class="hidden flex items-center justify-center gap-2 rounded-xl bg-rose-100 text-rose-800 px-3 py-3 text-sm font-bold"><i class="fa-solid fa-user-xmark"></i> 核定曠工</button>
+        </div>
+      </div>
+      <div id="v64DayNoteEditor" class="hidden space-y-2 border-t border-slate-200 pt-3">
+        <label class="block font-bold text-sm" for="dayDetailNotes">當日備註（可新增或修改）</label>
+        <textarea id="dayDetailNotes" rows="3" maxlength="2000" class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm" placeholder="輸入當日備註..."></textarea>
+        <button id="dayDetailSaveBtn" onclick="saveDayDetailNote()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl py-3">儲存備註至 Google 試算表</button>
+      </div>
+    </div>
+  </div>
+  <div id="singleLeaveModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+    <div class="glass-panel p-6 rounded-3xl w-full max-w-sm shadow-2xl relative">
+      <button onclick="closeSingleLeaveModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <h3 class="text-lg font-black text-slate-800 mb-4"><i class="fa-solid fa-file-signature text-indigo-500 mr-2"></i>單日請假申請</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">選擇日期</label>
+          <input type="date" id="slDate" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">假別設定</label>
+          <select id="slType" onchange="updateSingleLeaveUnit()" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 font-medium">
+            <option value="特休">特休 (年假)</option>
+            <option value="事假">事假</option>
+            <option value="病假">病假</option>
+            <option value="喪假">喪假</option>
+            <option value="婚假">婚假</option>
+            <option value="產假/陪產假">產假 / 陪產假</option>
+          </select>
+        </div>
+        <div>
+          <div id="slSpecialHoursBox">
+            <label class="block text-xs font-bold text-slate-700 mb-1">特休時數（0.5～8 小時）</label>
+            <input type="number" id="slHours" value="8" min="0.5" max="8" step="0.5" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div id="slFullDayBox" class="hidden bg-indigo-50 text-indigo-800 text-sm font-bold p-3 rounded-xl border border-indigo-100">請假單位：1 天（以 8 小時計入考勤）</div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">備註/事由</label>
+          <input type="text" id="slNotes" placeholder="選填" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <button onclick="submitSingleLeave()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-sm px-5 py-3 transition shadow-md flex justify-center items-center gap-2 mt-2">
+          <i class="fa-solid fa-paper-plane"></i> 提出請假
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loadingOverlay" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+    <div class="bg-white p-5 rounded-2xl shadow-xl flex items-center space-x-4 border border-slate-100">
+      <i class="fa-solid fa-circle-notch fa-spin text-indigo-600 text-3xl"></i>
+      <span id="loadingText" class="text-slate-700 font-bold text-sm tracking-wide">處理中...</span>
+    </div>
+  </div>
+  
+  <div id="customAlert" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+    <div class="bg-white p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center border border-slate-100 transform scale-95 transition-transform duration-200">
+      <div id="alertIcon" class="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 text-3xl"></div>
+      <h4 id="alertTitle" class="text-lg font-black text-slate-800 mb-2"></h4>
+      <p id="alertMessage" class="text-sm text-slate-500 font-medium mb-6"></p>
+      <button onclick="closeCustomAlert()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl px-4 py-3 transition">
+        確定
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript 核心邏輯 (V6) -->
+  <script>
+    var gasUrl = "https://script.google.com/macros/s/AKfycbw38U8ATQihpSd4rm9oAb-AryFLV5FF_mDhhSAUb5e7jpQD1cMlm-IGs7U4MsbgOLOb/exec";
+    
+    var companyLat = 24.9535;
+    var companyLng = 121.2250;
+    var companyRadius = 200;
+
+    var CACHE_KEY_ACCOUNTS = "att_app_accounts_cache_v51";
+    var CACHE_KEY_ATTENDANCE = "att_app_attendance_cache_v51";
+    var CACHE_KEY_HOLIDAYS = "att_app_holidays_cache_v51";
+    var CACHE_KEY_FORGET_CLOCK = "att_app_forget_clock_cache_v51";
+    var CACHE_KEY_USER = "att_app_current_user_v51";
+    var CACHE_KEY_LEAVE_DRAFTS = "att_app_leave_drafts_v52";
+    var CACHE_KEY_SCHEDULE_EDITS = "att_app_pending_schedule_v52";
+
+    var allAccounts = [];
+    var allAttendance = [];
+    var allHolidays = [];
+    var allLeaveBalances = [];
+    var forgetClockRequests = [];
+    var currentUser = null;
+    var viewTargetUsername = ""; 
+    var currentMonthDate = new Date();
+    var activeTab = "daily"; 
+
+    var map = null;
+    var companyMarkers = [];
+    var companyFenceCircles = [];
+    var mappedLocationsSignature = "";
+    var userMarker = null;
+    var userAccCircle = null;
+    var lastUserLat = null;
+    var lastUserLng = null;
+    var isInGpsRange = false;
+    var allowedLocations = [];
+    var currentValidLocationName = "";
+    var v66GpsReady = false;
+    var v66GpsPermissionBlocked = false;
+    var v66GpsRequestSerial = 0;
+    var v66GpsLastFixAt = 0;
+    var v66GpsAccuracy = Infinity;
+    var v66GpsLocationError = ""; 
+
+    var isOffDayModeActive = false;
+    var localScheduleEdits = {};
+    var allLeaveDrafts = [];
+    var pendingScheduleDrafts = {}; // 每個帳號月份各自保存：{dates:[...], revision:N}
+    var scheduleAutoSaveTimer = null;
+    var scheduleSaveQueue = Promise.resolve();
+    var scheduleSaving = false;
+
+    window.onload = function() {
+      try { pendingScheduleDrafts = JSON.parse(localStorage.getItem(CACHE_KEY_SCHEDULE_EDITS) || "{}"); } catch (_) { pendingScheduleDrafts = {}; }
+      window.addEventListener("pagehide", beaconPendingScheduleDrafts);
+      window.addEventListener("online", function() { if (isCurrentDraftDirty()) saveCurrentScheduleDraft(); });
+      document.addEventListener("visibilitychange", function() { if (document.visibilityState === "hidden") beaconPendingScheduleDrafts(); });
+      var now = new Date();
+      document.getElementById("txtCurrentDateDisplay").innerText = 
+        `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+      // 僅儲存隨機登入憑證；進入打卡頁前一定先向伺服器驗證。
+      v63RestoreLogin();
+    };
+
+    function initInteractiveMap() {
+      // 每次雲端帳號資料更新時，核對地圖標記與實際 GPS 打卡規則是否一致。
+      // 初次登入時常先載入預設位置，之後才抓到帳號設定座標；不可直接 return。
+      var newSignature = JSON.stringify(allowedLocations.map(function(loc) {
+        return [loc.lat, loc.lng, loc.radius, loc.name];
+      }));
+      if (map) {
+        if (newSignature !== mappedLocationsSignature) {
+          drawCompanyLocations();
+          mappedLocationsSignature = newSignature;
+          if (allowedLocations.length) map.setView([allowedLocations[0].lat, allowedLocations[0].lng], 16);
+          if (lastUserLat !== null && lastUserLng !== null) updateCurrentPositionOnly();
+        }
+        setTimeout(function(){if(map) map.invalidateSize(true);}, 120);
+        return;
+      }
+      if (typeof L === "undefined") {
+        showMapMessage("地圖元件無法載入；GPS 定位與打卡仍可使用。請檢查網路或瀏覽器的 CDN 封鎖設定。");
+        return;
+      }
+      try {
+        var startLat = allowedLocations.length > 0 ? allowedLocations[0].lat : 23.7;
+        var startLng = allowedLocations.length > 0 ? allowedLocations[0].lng : 120.9; // 僅用作底圖初始視角，絕不作為可打卡座標
+
+        map = L.map("liveMap").setView([startLat, startLng], 16);
+        var primaryTiles=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19, attribution: '&copy; OpenStreetMap', crossOrigin:true
+        }).addTo(map);
+        var tilesErrors=0, switched=false;
+        primaryTiles.on("tileerror", function(){
+          if(++tilesErrors>=3 && !switched){
+            switched=true; map.removeLayer(primaryTiles);
+            var fallback=L.tileLayer("https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+            var fallbackErrors=0;
+            fallback.on("tileerror",function(){if(++fallbackErrors>=3) showMapMessage("地圖底圖暫時無法取得，但 GPS 定位與打卡不受影響。");});
+          }
+        });
+        setTimeout(function(){if(map) map.invalidateSize(true);},250);
+
+        drawCompanyLocations();
+        mappedLocationsSignature = newSignature;
+        // GPS 由 v66StartGps 單獨啟動，與地圖底圖是否載入無關。
+      } catch (err) {
+        console.error("Leaflet Init Error:", err);
+        showMapMessage("地圖初始化失敗，但 GPS 定位與打卡可繼續使用。");
+      }
+    }
+
+    function showMapMessage(msg) {
+      var el=document.getElementById("mapFallbackNotice");
+      if(!el){el=document.createElement("div");el.id="mapFallbackNotice";el.className="absolute top-3 left-3 right-3 z-[500] bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3 text-xs font-bold shadow";
+        document.getElementById("liveMap").parentElement.appendChild(el);}
+      el.textContent=msg;
+    }
+
+    function drawCompanyLocations() {
+      if (!map) return;
+      companyMarkers.forEach(m => map.removeLayer(m));
+      companyFenceCircles.forEach(c => map.removeLayer(c));
+      companyMarkers = [];
+      companyFenceCircles = [];
+
+      var companyIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color: #ef4444; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 14px;"><i class="fa-solid fa-building"></i></div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+
+      allowedLocations.forEach(loc => {
+        var safeLocationName = String(loc.name || "打卡點").replace(/[&<>"']/g, function(c) {return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});
+        var marker = L.marker([loc.lat, loc.lng], { icon: companyIcon }).addTo(map)
+          .bindPopup(`<b>🏢 ${safeLocationName}</b><br>允許半徑：${loc.radius} 公尺`);
+        var circle = L.circle([loc.lat, loc.lng], {
+          color: "#f59e0b",
+          fillColor: "#fbbf24",
+          fillOpacity: 0.15,
+          radius: loc.radius
+        }).addTo(map);
+
+        companyMarkers.push(marker);
+        companyFenceCircles.push(circle);
+      });
+    }
+
+    function renderUserMapLocation(lat, lng, accuracy) {
+      document.getElementById("mapInfoPos").innerText = `目前座標：${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      document.getElementById("mapInfoAcc").innerText = `精確度：±${Math.round(accuracy || 0)}m`;
+      if (!map) return;
+      lastUserLat = lat;
+      lastUserLng = lng;
+
+      var userIcon = L.divIcon({
+        className: 'user-pos-icon',
+        html: `<div style="background-color: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2.5px solid white; box-shadow: 0 0 10px rgba(59,130,246,0.8);"><i class="fa-solid fa-user-large text-[10px]"></i></div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+
+      if (userMarker) {
+        userMarker.setLatLng([lat, lng]);
+      } else {
+        userMarker = L.marker([lat, lng], { icon: userIcon }).addTo(map).bindPopup("<b>📍 您目前的位置</b>");
+      }
+
+      if (userAccCircle) {
+        userAccCircle.setLatLng([lat, lng]);
+        userAccCircle.setRadius(accuracy || 15);
+      } else {
+        userAccCircle = L.circle([lat, lng], {
+          color: "#3b82f6",
+          fillColor: "#60a5fa",
+          fillOpacity: 0.2,
+          radius: accuracy || 15
+        }).addTo(map);
+      }
+
+      document.getElementById("mapInfoPos").innerText = `目前座標：${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      document.getElementById("mapInfoAcc").innerText = `精確度：±${Math.round(accuracy || 0)}m`;
+    }
+
+    function centerMapOnUser() {
+      if (map && lastUserLat && lastUserLng) {
+        map.setView([lastUserLat, lastUserLng], 17);
+        if (userMarker) userMarker.openPopup();
+      } else {
+        updateCurrentPositionOnly();
+      }
+    }
+
+    function centerMapOnCompany() {
+      if (map && allowedLocations.length > 0) {
+        map.setView([allowedLocations[0].lat, allowedLocations[0].lng], 16);
+        if (companyMarkers.length > 0) companyMarkers[0].openPopup();
+      }
+    }
+
+    function updateCurrentPositionOnly(manual) {
+      var iconDiv = document.getElementById("gpsStatusIcon");
+      var textDiv = document.getElementById("gpsStatusText");
+      if(!v66GpsReady || !allowedLocations.length){
+        isInGpsRange=false;currentValidLocationName='';
+        textDiv.textContent='資料庫未設定有效打卡點，已禁止打卡';
+        v66GpsHint('請管理員確認帳號資料的「打卡座標設定」。不可使用預設位置替代。',true);
+        return;
+      }
+      var serial=++v66GpsRequestSerial;
+      iconDiv.innerHTML='<i class="fa-solid fa-spinner fa-spin text-lg"></i>';
+      iconDiv.className='w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center shrink-0';
+      textDiv.textContent='正在取得目前位置…';
+      isInGpsRange=false;currentValidLocationName='';
+      if(!window.isSecureContext){
+        textDiv.textContent='請透過 HTTPS 開啟，瀏覽器才可使用 GPS';
+        v66GpsHint('定位需要 HTTPS 網站及 iPhone 設定中的 Safari 位置權限。',true);return;
+      }
+      if(!navigator.geolocation){
+        textDiv.textContent='瀏覽器不支援定位';v66GpsHint('請用 Safari / Chrome 開啟 HTTPS 網頁。',true);return;
+      }
+      var success=function(pos){
+        if(serial!==v66GpsRequestSerial)return;
+        var lat=pos.coords.latitude,lng=pos.coords.longitude,accuracy=pos.coords.accuracy;
+        var nearestDist=Infinity,validLoc=null;
+        allowedLocations.forEach(function(loc){
+          var dist=calculateDistanceMeters(lat,lng,loc.lat,loc.lng);
+          if(dist<nearestDist)nearestDist=dist;
+          if(dist<=loc.radius && (!validLoc || dist<validLoc.dist))validLoc={name:loc.name,dist:dist};
+        });
+        v66GpsLastFixAt=Date.now();v66GpsAccuracy=accuracy;
+        isInGpsRange=!!validLoc;currentValidLocationName=validLoc?validLoc.name:'';
+        lastUserLat=lat;lastUserLng=lng;
+        if(validLoc){
+          iconDiv.innerHTML='<i class="fa-solid fa-check text-xl"></i>';
+          iconDiv.className='w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0';
+          textDiv.textContent='已在 '+validLoc.name+' 範圍內（距離 '+validLoc.dist+'m）';
+        }else{
+          iconDiv.innerHTML='<i class="fa-solid fa-xmark text-xl"></i>';
+          iconDiv.className='w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0';
+          textDiv.textContent='目前不在授權打卡點內（最近距離 '+nearestDist+'m）';
+        }
+        v66GpsHint('',false);renderUserMapLocation(lat,lng,accuracy);
+      };
+      var failure=function(err){
+        if(serial!==v66GpsRequestSerial)return;
+        // GPS timeout is common on iOS. Retry one time with network location before showing failure.
+        if(err.code===3 && !manual){
+          navigator.geolocation.getCurrentPosition(success,function(err2){v66GpsFailure(err2,iconDiv,textDiv);},{enableHighAccuracy:false,timeout:15000,maximumAge:60000});
+          return;
+        }
+        v66GpsFailure(err,iconDiv,textDiv);
+      };
+      navigator.geolocation.getCurrentPosition(success,failure,{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+    }
+    function v66GpsFailure(err,iconDiv,textDiv){
+      isInGpsRange=false;currentValidLocationName='';
+      iconDiv.innerHTML='<i class="fa-solid fa-triangle-exclamation text-lg"></i>';
+      iconDiv.className='w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0';
+      var msg=err.code===1?'位置權限已被拒絕':err.code===2?'目前無法取得 GPS 位置':'定位逾時，請再試一次';
+      textDiv.textContent=msg;
+      v66GpsHint(err.code===1?'請在 iPhone「設定 → 隱私權與安全性 → 定位服務」啟用定位，並檢查 Safari 網站的位置權限。若先前拒絕，需在 Safari 網站設定重新允許。':msg+'。請確認已開啟手機定位、網路與 Safari 網站位置權限。',true);
+    }
+
+    function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+      var R = 6371e3;
+      var rad = Math.PI / 180;
+      var dLat = (lat2 - lat1) * rad;
+      var dLon = (lon2 - lon1) * rad;
+      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return Math.round(R * c);
+    }
+
+    async function doClockAction(type) {
+      if (v66GpsLastFixAt && Date.now()-v66GpsLastFixAt>60000) {
+        showCustomAlert('定位已過期','請點擊重新定位，取得最新 GPS 後再打卡。','warning');
+        updateCurrentPositionOnly(true);return;
+      }
+      if (!isInGpsRange || !currentValidLocationName) {
+        showCustomAlert("打卡失敗", "目前尚未定位成功或不在合法打卡範圍內，請點擊上方「更新定位」確認位置。", "error");
+        return;
+      }
+
+      showLoading("正在將打卡紀錄上傳雲端...");
+      var targetUrl = `${gasUrl}?token=${encodeURIComponent(v6SessionToken)}&action=webClockIn&username=${encodeURIComponent(currentUser.username)}&type=${type}&locationName=${encodeURIComponent(currentValidLocationName)}&lat=${encodeURIComponent(lastUserLat)}&lng=${encodeURIComponent(lastUserLng)}&accuracy=${encodeURIComponent(v66GpsAccuracy)}`;
+      
+      fetch(targetUrl)
+        .then(res => res.json())
+        .then(res => {
+          hideLoading();
+          if (res.result === "success") {
+            showCustomAlert("打卡成功", res.message, "success");
+            // 快速模式：不為了更新兩個按鈕重新下載整站考勤表。
+            var now=new Date();
+            var dateKey=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
+            var timeKey=res.time||String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+            var rec=allAttendance.find(function(x){return x.username===currentUser.username&&x.date===dateKey;});
+            if(!rec){rec={username:currentUser.username,date:dateKey,clockIn:'',clockOut:'',status:'正常'};allAttendance.push(rec);}
+            rec[type]=timeKey;
+            updateClockButtonsState();
+          } else {
+            showCustomAlert("打卡失敗", res.message || "未知錯誤", "error");
+          }
+        })
+        .catch(err => {
+          hideLoading();
+          showCustomAlert("連線錯誤", "無法寫入雲端伺服器，請稍後再試", "error");
+        });
+    }
+
+    function switchTab(tab) {
+      if (activeTab === "summary" && tab !== "summary" && isCurrentDraftDirty()) {
+        flushScheduleBeforeNavigation(function() { switchTab(tab); });
+        return;
+      }
+      activeTab = tab;
+      var vDaily = document.getElementById("viewDailyContainer");
+      var vSummary = document.getElementById("viewSummaryContainer");
+      var btnD = document.getElementById("tabBtnDaily");
+      var btnS = document.getElementById("tabBtnSummary");
+      var mNavD = document.getElementById("mobileNavDaily");
+      var mNavS = document.getElementById("mobileNavSummary");
+
+      if (tab === "daily") {
+        vDaily.classList.remove("hidden");
+        vSummary.classList.add("hidden");
+        btnD.className = "nav-tab-active px-5 py-2 rounded-xl transition flex items-center gap-2 text-sm";
+        btnS.className = "text-indigo-100 hover:text-white px-5 py-2 rounded-xl transition flex items-center gap-2 text-sm font-medium";
+        mNavD.className = "flex flex-col items-center justify-center w-full h-full text-indigo-600 font-bold text-[11px] space-y-1 transition";
+        mNavS.className = "flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-600 font-medium text-[11px] space-y-1 transition";
+        setTimeout(() => { if(map) map.invalidateSize(); }, 150);
+      } else {
+        vDaily.classList.add("hidden");
+        vSummary.classList.remove("hidden");
+        btnD.className = "text-indigo-100 hover:text-white px-5 py-2 rounded-xl transition flex items-center gap-2 text-sm font-medium";
+        btnS.className = "nav-tab-active px-5 py-2 rounded-xl transition flex items-center gap-2 text-sm";
+        mNavD.className = "flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-600 font-medium text-[11px] space-y-1 transition";
+        mNavS.className = "flex flex-col items-center justify-center w-full h-full text-indigo-600 font-bold text-[11px] space-y-1 transition";
+        if(!v63FullDataLoaded) {
+          v63EnsureFullData().catch(function(e){console.warn('月曆資料載入失敗',e);});
+        }
+      }
+    }
+
+    function v66ParseConfiguredLocations(raw) {
+      if (!raw) return [];
+      var entries=String(raw).replace(/[，；｜]/g,function(c){return c==='，'?',':';';}).split(/[;|\n]+/),out=[];
+      entries.forEach(function(entry,i){
+        var parts=entry.trim().replace(/^['"]|['"]$/g,'').split(',').map(function(s){return s.trim();});
+        if(parts.length<2)return;
+        var lat=Number(parts[0]),lng=Number(parts[1]);
+        var radius=parts.length>=3&&parts[2]!==''?Number(parts[2]):NaN;
+        if(!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180||lat===0&&lng===0)return;
+        // 半徑必須由資料庫明確設定，未填時使用現有系統既定的半徑（不使用預設座標）。
+        if(!Number.isFinite(radius)||radius<=0)radius=companyRadius;
+        if(radius>10000)return;
+        out.push({lat:lat,lng:lng,radius:radius,name:parts.slice(3).join(',')||'打卡點 '+(i+1)});
+      });
+      return out;
+    }
+    function v66GpsHint(message,show){
+      var box=document.getElementById('v66GpsHelp');
+      var t=document.getElementById('v66GpsHelpText');
+      if(box&&t){t.textContent=message||'';box.classList.toggle('hidden',!show);}
+    }
+    function v66ManualLocate(){updateCurrentPositionOnly(true);}
+    function v66StartGps(){
+      if(!v66GpsReady){v66GpsHint('資料庫沒有可用的打卡座標，請聯絡管理員確認「打卡座標設定」。',true);return;}
+      // iOS 已授權時瀏覽器會直接讀取；首次與拒絕後是否提示由 Safari / 系統決定。
+      updateCurrentPositionOnly(false);
+    }
+    function initUserSession() {
+      document.getElementById("txtUserInitials").innerText = currentUser.name.charAt(0);
+      document.getElementById("txtWelcomeName").innerText = "哈囉，" + currentUser.name;
+      
+      var badge = document.getElementById("roleBadge");
+      var adminSelector = document.getElementById("adminUserSelector");
+      
+      if (currentUser.role.toLowerCase() === "admin") {
+        badge.classList.remove("hidden");
+        adminSelector.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+        adminSelector.classList.add("hidden");
+      }
+
+      // V6.6：唯一授權來源是「帳號資料」的打卡座標設定；不再偷用程式內建座標。
+      allowedLocations = v66ParseConfiguredLocations(currentUser ? currentUser.gpsLocations : "");
+      v66GpsReady = allowedLocations.length > 0;
+      isInGpsRange = false;
+      currentValidLocationName = "";
+      var source = document.getElementById("v66LocationSource");
+      var rText = v66GpsReady ? (allowedLocations.length > 1 ? allowedLocations.length + " 個資料庫打卡點" : allowedLocations[0].radius + "m") : "未設定";
+      document.getElementById("txtCompanyRadiusDisplay").innerText = rText;
+      source.textContent = v66GpsReady ? "打卡點：" + allowedLocations.map(function(x){return x.name + " (" + x.lat.toFixed(5) + ", " + x.lng.toFixed(5) + ")";}).join("、") : "⚠ 尚未取得有效的資料庫打卡座標，為避免誤打卡，已停止 GPS 打卡。請管理員檢查帳號資料中的「打卡座標設定」。";
+      source.className = "mb-3 text-[11px] font-semibold " + (v66GpsReady ? "text-slate-500" : "text-rose-700");
+      document.getElementById("btnClockIn").disabled = !v66GpsReady;
+      document.getElementById("btnClockOut").disabled = !v66GpsReady;
+      initInteractiveMap();
+      // 地圖 CDN 不可用時也必須獨立啟動定位；不要把定位權限綁定在地圖初始化成功上。
+      v66StartGps();
+
+    }
+
+    function refreshView() {
+      if (currentUser.role.toLowerCase() === "admin") {
+        populateEmployeeDropdown();
+        renderAdminAuditPanel();
+      }
+      rebuildLocalScheduleEdits();
+      renderShiftInfoBar();
+      renderCalendar();
+      calculateMonthlyStats();
+      updateClockButtonsState();
+    }
+
+    function renderAdminAuditPanel() {
+      var panel = document.getElementById("adminPendingAuditPanel");
+      var listDiv = document.getElementById("pendingAuditList");
+      var countSpan = document.getElementById("txtPendingCount");
+      if (!panel || !listDiv) return;
+
+      if (currentUser.role.toLowerCase() !== "admin") {
+        panel.classList.add("hidden");
+        return;
+      }
+
+      var pendingItems = [];
+      if (forgetClockRequests && forgetClockRequests.length > 0) {
+        forgetClockRequests.forEach(req => {
+          if (req.status === "待審核") {
+            pendingItems.push({
+              username: req.username,
+              name: req.name || req.username,
+              date: normalizeDate(req.date),
+              clockIn: req.type === "補上班" ? req.time : "",
+              clockOut: req.type === "補下班" ? req.time : "",
+              note: `(${req.type}) ${req.reason}`
+            });
+          }
+        });
+      } else {
+        allAttendance.forEach(rec => {
+          if (rec.status && rec.status.indexOf("補打卡(待審核)") !== -1) {
+            var userAcc = allAccounts.find(a => a.username === rec.username);
+            pendingItems.push({
+              username: rec.username,
+              name: userAcc ? userAcc.name : rec.username,
+              date: normalizeDate(rec.date),
+              clockIn: rec.clockIn,
+              clockOut: rec.clockOut,
+              note: rec.notes || ""
+            });
+          }
+        });
+      }
+
+      if (pendingItems.length === 0) {
+        panel.classList.add("hidden");
+        return;
+      }
+
+      panel.classList.remove("hidden");
+      countSpan.innerText = pendingItems.length;
+      listDiv.innerHTML = "";
+
+      pendingItems.forEach(item => {
+        var card = document.createElement("div");
+        card.className = "bg-white p-3 rounded-2xl border border-amber-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-slate-800 text-sm">${item.name}</span>
+              <span class="bg-slate-100 text-slate-600 text-[11px] font-bold px-2 py-0.5 rounded">${item.date}</span>
+            </div>
+            <div class="text-xs text-slate-500 font-medium mt-1">
+              ${item.clockIn ? '☀️ 上班: <b class="text-slate-700">' + item.clockIn + '</b>' : ''}
+              ${item.clockOut ? '🌙 下班: <b class="text-slate-700">' + item.clockOut + '</b>' : ''}
+              <span class="text-amber-600 font-bold ml-1">${item.note}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="auditForgetClock('${item.username}', '${item.date}', 'approved')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1 shadow-sm">
+              <i class="fa-solid fa-check"></i> 通過
+            </button>
+            <button onclick="auditForgetClock('${item.username}', '${item.date}', 'rejected')" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1 shadow-sm">
+              <i class="fa-solid fa-xmark"></i> 駁回
+            </button>
+          </div>
+        `;
+        listDiv.appendChild(card);
+      });
+    }
+
+    function auditForgetClock(username, dateStr, status) {
+      var actionText = status === "approved" ? "通過" : "駁回";
+      showLoading(`處理審核 (${actionText}) 中...`);
+
+      var adminName = currentUser ? currentUser.username : "admin";
+      fetch(`${gasUrl}?token=${encodeURIComponent(v6SessionToken)}&action=approveForgetClock&username=${encodeURIComponent(username)}&date=${dateStr}&status=${status}&adminUsername=${encodeURIComponent(adminName)}`)
+        .then(res => res.json())
+        .then(res => {
+          hideLoading();
+          if (res.result === "success") {
+            showCustomAlert("審核完成", res.message, "success");
+            fetchSpreadsheetData(false);
+          } else {
+            showCustomAlert("審核失敗", res.message || "未知錯誤", "error");
+          }
+        })
+        .catch(err => {
+          hideLoading();
+          showCustomAlert("網路連線錯誤", "無法傳送審核結果", "error");
+        });
+    }
+
+    function updateClockButtonsState() {
+      if (!currentUser) return;
+      var todayStr = normalizeDate(new Date());
+      var userRecords = allAttendance.filter(r => r.username === currentUser.username);
+      var todayRec = userRecords.find(r => normalizeDate(r.date) === todayStr);
+
+      var hasClockIn = todayRec && todayRec.clockIn;
+      var hasClockOut = todayRec && todayRec.clockOut;
+
+      var btnIn = document.getElementById("btnClockIn");
+      var btnOut = document.getElementById("btnClockOut");
+
+      if (btnIn) {
+        if (hasClockIn) {
+          btnIn.onclick = null;
+          btnIn.className = "relative bg-slate-200 text-slate-500 p-4 sm:p-5 rounded-2xl shadow-sm cursor-not-allowed flex flex-col items-center justify-center gap-1";
+          btnIn.innerHTML = `<i class="fa-solid fa-check-circle text-3xl sm:text-4xl mb-1"></i><span class="font-extrabold text-base sm:text-lg tracking-wider">已上班</span><span class="text-[10px] sm:text-xs font-bold">(${todayRec.clockIn})</span>`;
+        } else {
+          btnIn.onclick = function() { doClockAction('clockIn'); };
+          btnIn.className = "relative group overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 text-white p-4 sm:p-5 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1";
+          btnIn.innerHTML = `<div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+            <i class="fa-solid fa-fingerprint text-3xl sm:text-4xl mb-1 relative z-10"></i>
+            <span class="font-extrabold text-base sm:text-lg tracking-wider relative z-10">上班打卡</span>
+            <span class="text-[10px] sm:text-xs text-emerald-100 font-medium relative z-10">(驗證 GPS 位置)</span>`;
+        }
+      }
+
+      if (btnOut) {
+        if (hasClockOut) {
+          btnOut.onclick = null;
+          btnOut.className = "relative bg-slate-200 text-slate-500 p-4 sm:p-5 rounded-2xl shadow-sm cursor-not-allowed flex flex-col items-center justify-center gap-1";
+          btnOut.innerHTML = `<i class="fa-solid fa-check-circle text-3xl sm:text-4xl mb-1"></i><span class="font-extrabold text-base sm:text-lg tracking-wider">已下班</span><span class="text-[10px] sm:text-xs font-bold">(${todayRec.clockOut})</span>`;
+        } else {
+          btnOut.onclick = function() { doClockAction('clockOut'); };
+          btnOut.className = "relative group overflow-hidden bg-gradient-to-br from-rose-400 to-rose-600 text-white p-4 sm:p-5 rounded-2xl shadow-lg hover:shadow-xl transition active:scale-95 flex flex-col items-center justify-center gap-1";
+          btnOut.innerHTML = `<div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+            <i class="fa-solid fa-house-person-leave text-3xl sm:text-4xl mb-1 relative z-10"></i>
+            <span class="font-extrabold text-base sm:text-lg tracking-wider relative z-10">下班打卡</span>
+            <span class="text-[10px] sm:text-xs text-rose-100 font-medium relative z-10">(驗證 GPS 位置)</span>`;
+        }
+      }
+    }
+
+    function fetchSpreadsheetData(isSilent) {
+      showLoading(isSilent ? "正在讀取最新考勤資料，請稍候..." : "同步雲端資料中...");
+      
+      return fetch(v6ApiUrl("action=getAllData"))
+        .then(res => res.json())
+        .then(data => {
+          hideLoading();
+          if (data.result === "success") {
+            allAccounts = data.accounts || [];
+            allAttendance = data.attendance || [];
+            allHolidays = data.holidays || [];
+            allLeaveBalances = data.leaveBalances || [];
+            forgetClockRequests = data.forgetClockRequests || [];
+            allLeaveDrafts = data.leaveDrafts || [];
+
+            localStorage.setItem(CACHE_KEY_ACCOUNTS, JSON.stringify(allAccounts));
+            localStorage.setItem(CACHE_KEY_ATTENDANCE, JSON.stringify(allAttendance));
+            localStorage.setItem(CACHE_KEY_HOLIDAYS, JSON.stringify(allHolidays));
+            localStorage.setItem(CACHE_KEY_FORGET_CLOCK, JSON.stringify(forgetClockRequests));
+            localStorage.setItem(CACHE_KEY_LEAVE_DRAFTS, JSON.stringify(allLeaveDrafts));
+
+            var found = allAccounts.find(a => a.username === currentUser.username);
+            if (found) {
+              currentUser = found;
+              localStorage.setItem(CACHE_KEY_USER, JSON.stringify(currentUser));
+              initUserSession();
+            }
+
+            refreshView();
+            // 恢復上次未送達的本機草稿，重新嘗試雲端同步
+            if (isCurrentDraftDirty()) {
+              clearTimeout(scheduleAutoSaveTimer);
+              scheduleAutoSaveTimer = setTimeout(function() { saveCurrentScheduleDraft(); }, 500);
+            }
+            if (!isSilent) showCustomAlert("同步成功", "已成功從 Google 雲端載入最新考勤紀錄！", "success");
+            v63FullDataLoaded=true;
+            return true;
+          } else {
+            showCustomAlert("同步失敗", data.message || "伺服器異常", "error");
+            return false;
+          }
+        })
+        .catch(err => {
+          hideLoading();
+          showCustomAlert("連線失敗", "無法與 Google Apps Script 建立連線，請檢查網路。", "error");
+          return false;
+        });
+    }
+
+    function loadDataFromLocalStorage() {
+      try {
+        var acc = localStorage.getItem(CACHE_KEY_ACCOUNTS);
+        var att = localStorage.getItem(CACHE_KEY_ATTENDANCE);
+        var hol = localStorage.getItem(CACHE_KEY_HOLIDAYS);
+        var fc = localStorage.getItem(CACHE_KEY_FORGET_CLOCK);
+        var ld = localStorage.getItem(CACHE_KEY_LEAVE_DRAFTS);
+        if (acc && att) {
+          allAccounts = JSON.parse(acc);
+          allAttendance = JSON.parse(att);
+          allHolidays = hol ? JSON.parse(hol) : [];
+          forgetClockRequests = fc ? JSON.parse(fc) : [];
+          allLeaveDrafts = ld ? JSON.parse(ld) : [];
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    function v63ActivateQuick(user, token, today) {
+      if (!user || !user.username || !user.gpsLocations) {
+        // 未設定座標時仍可進入頁面，但以原有預設點規則運作。
+        if (!user || !user.username) throw Error("無法取得登入帳號");
+      }
+      v6SessionToken=token;
+      currentUser=user;
+      viewTargetUsername=user.username;
+      v63SessionReady=true;
+      v63FullDataLoaded=false;
+      allAttendance=today?[today]:[];
+      document.getElementById('loginOverlay').classList.add('hidden');
+      document.getElementById('mainApp').classList.remove('hidden');
+      initUserSession();
+      updateClockButtonsState();
+      switchTab('daily');
+      // 不等待全站資料：GPS 驗證獨立執行。
+    }
+    async function v63RestoreLogin() {
+      var savedToken=localStorage.getItem(V63_REMEMBER_KEY);
+      if(!savedToken)return;
+      showLoading('正在確認此裝置登入狀態...');
+      try {
+        var r=await fetch(gasUrl+'?action=quickProfile&token='+encodeURIComponent(savedToken),{cache:'no-store'});
+        var d=await r.json();
+        if(d.result!=='success')throw Error(d.message||'登入已過期');
+        v63ActivateQuick(d.user,savedToken,d.today);
+      } catch(e) {
+        localStorage.removeItem(V63_REMEMBER_KEY);
+        v6SessionToken='';currentUser=null;
+        document.getElementById('loginOverlay').classList.remove('hidden');
+      } finally {hideLoading();}
+    }
+    async function handleLogin() {
+      var u=document.getElementById('loginUsername').value.trim(),p=document.getElementById('loginPassword').value;
+      if(!u||!p){showCustomAlert('提示','請輸入帳號密碼','warning');return;}
+      showLoading('正在驗證並準備 GPS 打卡...');
+      try {
+        var remember=document.getElementById('rememberDevice').checked;
+        var r=await fetch(gasUrl,{method:'POST',body:new URLSearchParams({action:'login',username:u,password:p,rememberDevice:String(remember)})});
+        var d=await r.json();if(d.result!=='success')throw Error(d.message||'登入失敗');
+        if(remember)localStorage.setItem(V63_REMEMBER_KEY,d.token);
+        else localStorage.removeItem(V63_REMEMBER_KEY);
+        document.getElementById('loginPassword').value='';
+        v63ActivateQuick(d.user,d.token,d.today);
+      } catch(e) {showCustomAlert('登入失敗',e.message||String(e),'error');}
+      finally {hideLoading();}
+    }
+    async function v63EnsureFullData() {
+      if(v63FullDataLoaded)return;
+      if(v63FullDataPromise)return v63FullDataPromise;
+      v63FullDataPromise=fetchSpreadsheetData(true).then(function(ok){
+        if(ok===false)throw Error('資料尚未完整載入，請再試一次');
+        v63FullDataLoaded=true;
+      }).finally(function(){v63FullDataPromise=null;});
+      return v63FullDataPromise;
+    }
+    function logout() {
+      if (isCurrentDraftDirty()) {
+        flushScheduleBeforeNavigation(function() { logout(); });return;
+      }
+      var oldToken=v6SessionToken;
+      localStorage.removeItem(V63_REMEMBER_KEY);
+      localStorage.removeItem(CACHE_KEY_USER);
+      [CACHE_KEY_ACCOUNTS,CACHE_KEY_ATTENDANCE,CACHE_KEY_LEAVE_DRAFTS,CACHE_KEY_FORGET_CLOCK].forEach(function(k){localStorage.removeItem(k);});
+      v6SessionToken='';currentUser=null;v63SessionReady=false;v63FullDataLoaded=false;v63FullDataPromise=null;
+      allAccounts=[];allAttendance=[];allHolidays=[];allLeaveDrafts=[];forgetClockRequests=[];
+      isOffDayModeActive=false;
+      document.getElementById('mainApp').classList.add('hidden');
+      document.getElementById('loginOverlay').classList.remove('hidden');
+      document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';
+      // 非同步撤銷伺服器端憑證；本機先即時退出。
+      if(oldToken)fetch(gasUrl+'?action=logoutDevice&token='+encodeURIComponent(oldToken),{keepalive:true}).catch(function(){});
+    }
+
+    function populateEmployeeDropdown() {
+      var sel = document.getElementById("selEmployee");
+      if (!sel) return;
+      sel.innerHTML = "";
+      allAccounts.forEach(acc => {
+        var opt = document.createElement("option");
+        opt.value = acc.username;
+        opt.innerText = `${acc.name} (${acc.username})`;
+        if (acc.username === viewTargetUsername) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+
+    function switchEmployeeView() {
+      var sel = document.getElementById("selEmployee");
+      if (!sel || !currentUser) return;
+      var next = sel.value;
+      if (next === viewTargetUsername) return;
+      if (isCurrentDraftDirty()) {
+        sel.value = viewTargetUsername;
+        flushScheduleBeforeNavigation(function() { viewTargetUsername = next; isOffDayModeActive = false; refreshView(); });
+      } else {
+        viewTargetUsername = next;
+        isOffDayModeActive = false;
+        refreshView();
+      }
+    }
+
+    function changeMonth(dir) {
+      var go = function() {
+        currentMonthDate = new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() + dir, 1);
+        isOffDayModeActive = false;
+        refreshView();
+      };
+      if (isCurrentDraftDirty()) flushScheduleBeforeNavigation(go);
+      else go();
+    }
+
+    // ================= 班別模式與排休防呆控制 =================
+
+    function scheduleYearMonth() {
+      return currentMonthDate.getFullYear() + "-" + String(currentMonthDate.getMonth() + 1).padStart(2, "0");
+    }
+    function targetScheduleAccount() {
+      return allAccounts.find(function(a) { return a.username === viewTargetUsername; }) || currentUser;
+    }
+    function scheduleKey(username, yearMonth) { return username + "|" + yearMonth; }
+    function isScheduleLocked(username, month) {
+      var acc = allAccounts.find(function(a) { return a.username === username; }) || currentUser;
+      var matches = String((acc && acc.submittedLeaveMonths) || "").match(/\d{4}-(?:0[1-9]|1[0-2])/g) || [];
+      return matches.indexOf(month) >= 0;
+    }
+    function getCurrentScheduleKey() {
+      var acc = targetScheduleAccount();
+      return scheduleKey(acc.username, scheduleYearMonth());
+    }
+    function persistPendingScheduleDrafts() {
+      try { localStorage.setItem(CACHE_KEY_SCHEDULE_EDITS, JSON.stringify(pendingScheduleDrafts)); }
+      catch (err) { console.warn("無法快取排休草稿", err); }
+    }
+    function getSelectedScheduleDays(username, yearMonth) {
+      // 已鎖定月份以正式考勤資料為準；不採用任何殘留草稿
+      if (isScheduleLocked(username, yearMonth)) {
+        return allAttendance.filter(function(r) { return r.username === username && r.date.slice(0, 7) === yearMonth && r.status === "排休"; })
+          .map(function(r) { return r.date; });
+      }
+      var key = scheduleKey(username, yearMonth);
+      if (pendingScheduleDrafts[key]) return pendingScheduleDrafts[key].dates.slice();
+      var draft = allLeaveDrafts.find(function(d) { return d.username === username && d.yearMonth === yearMonth; });
+      if (draft) return (draft.dates || []).slice();
+      return allAttendance.filter(function(r) { return r.username === username && r.date.slice(0, 7) === yearMonth && r.status === "排休"; })
+        .map(function(r) { return r.date; });
+    }
+    function rebuildLocalScheduleEdits() {
+      localScheduleEdits = {};
+      if (!currentUser) return;
+      var acc = targetScheduleAccount();
+      var ym = scheduleYearMonth();
+      var selected = getSelectedScheduleDays(acc.username, ym);
+      var previous = allAttendance.filter(function(r) { return r.username === acc.username && r.date.slice(0,7) === ym && r.status === "排休"; });
+      previous.forEach(function(r) { if (selected.indexOf(r.date) < 0) localScheduleEdits[r.date] = "上班"; });
+      selected.forEach(function(d) { localScheduleEdits[d] = "排休"; });
+    }
+    function isCurrentDraftDirty() {
+      if (!currentUser) return false;
+      return Boolean(pendingScheduleDrafts[getCurrentScheduleKey()]);
+    }
+    function setScheduleStatus(text, kind) {
+      var el = document.getElementById("txtScheduleSaveStatus");
+      if (!el) return;
+      el.textContent = text;
+      el.className = "font-bold shrink-0 " + (kind === "error" ? "text-rose-600" : kind === "saved" ? "text-emerald-700" : "text-indigo-600");
+    }
+    function renderShiftInfoBar() {
+      if (!currentUser) return;
+      var targetAcc = targetScheduleAccount();
+      var maxOffDays = parseInt(targetAcc.monthlyOffDays || 0, 10);
+      var locked = isScheduleLocked(targetAcc.username, scheduleYearMonth());
+      var badge = document.getElementById("txtWorkTypeBadge");
+      var desc = document.getElementById("txtShiftPolicyDesc");
+      var counterDiv = document.getElementById("txtShiftCounterDisplay");
+      var btnToggle = document.getElementById("btnToggleShiftMode");
+      var btnLabel = document.getElementById("txtShiftModeBtnLabel");
+      var btnSubmit = document.getElementById("btnSaveShiftSubmit");
+      var lockTag = document.getElementById("shiftLockTag");
+      var finishLabel = document.getElementById("txtFinalizeShift");
+      lockTag.classList.toggle("hidden", !locked);
+      btnToggle.disabled = locked;
+      btnSubmit.disabled = true; // 舊按鈕不再使用
+      var reminder = document.getElementById("v65ScheduleReminder");
+      reminder.classList.toggle("hidden", locked || maxOffDays <= 0 || isOffDayModeActive);
+      reminder.classList.toggle("v65-schedule-blink", !locked && maxOffDays > 0 && !isOffDayModeActive);
+      if (maxOffDays <= 0 && !locked) {
+        isOffDayModeActive = false;
+        badge.className = "bg-indigo-600 text-white px-2 py-0.5 rounded text-[11px]";
+        badge.innerText = "固定週休二日制";
+        desc.innerText = "週六日與國定假日休息，無須手動排休。";
+        counterDiv.classList.add("hidden");
+        btnLabel.innerText = "直接鎖定月份";
+        finishLabel.innerText = "固定週休無需提交";
+      } else if (locked) {
+        isOffDayModeActive = false;
+        badge.className = "bg-slate-700 text-white px-2 py-0.5 rounded text-[11px]";
+        badge.innerText = "排休已完成";
+        desc.innerText = "本月排休已寫入員工考勤表，日期不可再次編輯。";
+        counterDiv.classList.remove("hidden");
+        btnLabel.innerText = "🔒 已鎖定";
+        finishLabel.innerText = "🔒 已提交，無法再修改";
+      } else {
+        badge.className = "bg-amber-600 text-white px-2 py-0.5 rounded text-[11px]";
+        badge.innerText = "輪休／排班制";
+        desc.innerText = isOffDayModeActive ? "排班中：點選日期增減休假。完成後按下方排班按鈕鎖定。" : "尚未完成本月排班。";
+        counterDiv.classList.remove("hidden");
+        btnLabel.innerText = isOffDayModeActive ? "完成排班並鎖定" : "排班模式";
+        finishLabel.innerText = "完成本月排休・正式鎖定";
+      }
+      btnToggle.className = "min-w-0 rounded-xl px-2 py-3 text-xs sm:text-sm font-bold flex justify-center items-center gap-1.5 " +
+        (locked ? "bg-slate-300 text-slate-500 cursor-not-allowed" : isOffDayModeActive ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-indigo-600 hover:bg-indigo-700 text-white");
+      if (locked) setScheduleStatus("🔒 已正式完成", "saved");
+      else if (isCurrentDraftDirty()) setScheduleStatus("● 有變更，正在準備同步", "pending");
+      else if (getSelectedScheduleDays(targetAcc.username, scheduleYearMonth()).length) setScheduleStatus("✓ 草稿已同步至雲端", "saved");
+      else setScheduleStatus("尚未選擇排休日", "pending");
+      updateOffDayCounters();
+    }
+
+    // V6.5 唯一排班入口：未開始先選流程、編輯中直接提交、固定週休直接鎖定
+    function v65SchedulePrimaryAction() {
+      var acc = targetScheduleAccount(), ym = scheduleYearMonth();
+      if (isScheduleLocked(acc.username, ym)) return;
+      if (isOffDayModeActive) {
+        submitMonthlyLeave(getSelectedScheduleDays(acc.username, ym).length === 0);
+        return;
+      }
+      if (parseInt(acc.monthlyOffDays || 0, 10) <= 0) { submitMonthlyLeave(true); return; }
+      document.getElementById('v65ScheduleChoiceModal').classList.remove('hidden');
+    }
+    function v65ChooseSchedule(choice) {
+      document.getElementById('v65ScheduleChoiceModal').classList.add('hidden');
+      if (choice === 'edit') toggleOffDayMode();
+      if (choice === 'none') submitMonthlyLeave(true);
+    }
+    function toggleOffDayMode() {
+      var acc = targetScheduleAccount();
+      if (parseInt(acc.monthlyOffDays || 0, 10) <= 0 || isScheduleLocked(acc.username, scheduleYearMonth())) return;
+      if (!isOffDayModeActive) {
+        isOffDayModeActive = true;
+        renderShiftInfoBar(); renderCalendar();
+      } else {
+        flushScheduleBeforeNavigation(function() {
+          isOffDayModeActive = false;
+          renderShiftInfoBar(); renderCalendar();
+        });
+      }
+    }
+
+    function updateOffDayCounters() {
+      if (!currentUser) return { max: 0, selected: 0 };
+      var acc = targetScheduleAccount();
+      var max = parseInt(acc.monthlyOffDays || 0, 10);
+      var selected = getSelectedScheduleDays(acc.username, scheduleYearMonth()).length;
+      document.getElementById("lblMaxOffDays").innerText = max;
+      document.getElementById("lblSelectedOffDays").innerText = selected;
+      document.getElementById("lblRemainingOffDays").innerText = "剩餘 " + Math.max(0, max - selected) + " 天";
+      return { max: max, selected: selected };
+    }
+
+    function handleCalendarCellClick(dateStr) {
+      var acc = targetScheduleAccount();
+      var ym = scheduleYearMonth();
+      var max = parseInt(acc.monthlyOffDays || 0, 10);
+      if(!isOffDayModeActive){openDayDetail(dateStr);return;}
+      if (max <= 0) return;
+      if (isScheduleLocked(acc.username, ym)) {
+        showCustomAlert("排休已鎖定", "此月份已完成提交，無法再變更排休日。", "warning"); return;
+      }
+      if (!isOffDayModeActive) {
+        openDayDetail(dateStr); return;
+      }
+      if (currentUser.username !== acc.username && currentUser.role.toLowerCase() !== "admin") {
+        showCustomAlert("權限不足", "只能編輯自己的排休表", "warning"); return;
+      }
+      var rec = allAttendance.find(function(r) { return r.username === acc.username && r.date === dateStr; });
+      if (rec && (rec.clockIn || rec.clockOut || (rec.status && !["正常", "排休", "曠工"].includes(rec.status)))) {
+        showCustomAlert("已有出勤／請假紀錄", "該日期已記錄打卡或其他假別，無法直接覆寫為排休。", "warning"); return;
+      }
+      var selected = getSelectedScheduleDays(acc.username, ym);
+      var idx = selected.indexOf(dateStr);
+      if (idx >= 0) selected.splice(idx, 1);
+      else {
+        if (selected.length >= max) { showCustomAlert("排休天數已滿", "本月最多排休 " + max + " 天。請先取消另一個日期。", "warning"); return; }
+        selected.push(dateStr);
+      }
+      selected.sort();
+      var key = scheduleKey(acc.username, ym);
+      var prev = pendingScheduleDrafts[key];
+      pendingScheduleDrafts[key] = { dates: selected, revision: (prev ? prev.revision : 0) + 1 };
+      persistPendingScheduleDrafts();
+      rebuildLocalScheduleEdits();
+      renderCalendar(); calculateMonthlyStats(); updateOffDayCounters();
+      setScheduleStatus("● 尚未同步（即將自動儲存）", "pending");
+      clearTimeout(scheduleAutoSaveTimer);
+      scheduleAutoSaveTimer = setTimeout(function() { saveCurrentScheduleDraft(); }, 1100);
+    }
+
+    function saveCurrentScheduleDraft() {
+      if (!currentUser || !isCurrentDraftDirty()) return scheduleSaveQueue.then(function() { return true; });
+      var acc = targetScheduleAccount();
+      var ym = scheduleYearMonth();
+      var key = scheduleKey(acc.username, ym);
+      var entry = pendingScheduleDrafts[key];
+      if (!entry || isScheduleLocked(acc.username, ym)) return Promise.resolve(true);
+      var dates = entry.dates.slice();
+      var rev = entry.revision;
+      var url = gasUrl + "?token=" + encodeURIComponent(v6SessionToken) + "&action=saveLeaveDraft&username=" + encodeURIComponent(acc.username)
+        + "&yearMonth=" + encodeURIComponent(ym) + "&leaveData=" + encodeURIComponent(JSON.stringify(dates));
+      scheduleSaveQueue = scheduleSaveQueue.catch(function() {}).then(function() {
+        scheduleSaving = true;
+        setScheduleStatus("↻ 正在上傳 Google 試算表...", "pending");
+        return fetch(url).then(function(res) { return res.json(); }).then(function(res) {
+          if (res.result === "locked") {
+            throw new Error("該月份已由其他裝置提交鎖定，請重新同步");
+          }
+          if (res.result !== "success") throw new Error(res.message || "草稿同步失敗");
+          var old = allLeaveDrafts.find(function(d) { return d.username === acc.username && d.yearMonth === ym; });
+          if (old) { old.dates = dates.slice(); old.updatedAt = res.updatedAt; }
+          else allLeaveDrafts.push({ username: acc.username, yearMonth: ym, dates: dates.slice(), updatedAt: res.updatedAt });
+          localStorage.setItem(CACHE_KEY_LEAVE_DRAFTS, JSON.stringify(allLeaveDrafts));
+          if (pendingScheduleDrafts[key] && pendingScheduleDrafts[key].revision === rev) {
+            delete pendingScheduleDrafts[key]; persistPendingScheduleDrafts();
+          }
+          if (currentUser && getCurrentScheduleKey() === key) {
+            rebuildLocalScheduleEdits();
+            renderCalendar(); updateOffDayCounters();
+            setScheduleStatus(isCurrentDraftDirty() ? "● 有新變更，等待同步" : "✓ 草稿已上傳雲端", isCurrentDraftDirty() ? "pending" : "saved");
+          }
+          return true;
+        }).catch(function(err) {
+          if (currentUser && getCurrentScheduleKey() === key) setScheduleStatus("✕ 上傳失敗：" + err.message, "error");
+          console.error("排休草稿同步失敗", err);
+          return false;
+        }).finally(function() { scheduleSaving = false; });
+      });
+      return scheduleSaveQueue;
+    }
+
+    function flushScheduleBeforeNavigation(onSuccess) {
+      clearTimeout(scheduleAutoSaveTimer);
+      if (!isCurrentDraftDirty()) { onSuccess(); return; }
+      showLoading("正在自動儲存排休草稿至 Google 試算表...");
+      saveCurrentScheduleDraft().then(function(ok) {
+        hideLoading();
+        if (ok && !isCurrentDraftDirty()) onSuccess();
+        else showCustomAlert("未能完成雲端儲存", "排休變更仍保存在這台裝置，請檢查網路後重試，避免換頁遺失資料。", "error");
+      });
+    }
+
+    function beaconPendingScheduleDrafts() {
+      if (!currentUser || !navigator.sendBeacon) return;
+      var acc = targetScheduleAccount(), ym = scheduleYearMonth();
+      var draft = pendingScheduleDrafts[scheduleKey(acc.username, ym)];
+      if (!draft) return;
+      // sendBeacon 僅為關頁備援，瀏覽器不保證送達；localStorage 仍會保留待傳內容。
+      var form = new URLSearchParams({ action: "saveLeaveDraft", token: v6SessionToken, username: acc.username,
+        yearMonth: ym, leaveData: JSON.stringify(draft.dates) });
+      navigator.sendBeacon(gasUrl, form);
+    }
+
+    // 🆕 前端 V6 核心演算：計算工時、15分鐘寬限期、彈性工時、遲到補足與分級加班費
+    function calculateWorkAndOvertime(clockInStr, clockOutStr, stdStartStr, stdEndStr) {
+      if (!clockInStr || !clockOutStr) {
+        return { workHours: 0, otTier1: 0, otTier2: 0, lateMins: 0, isOffset: false };
+      }
+
+      var stdStartMins = timeToMinutes(stdStartStr || "09:00");
+      var stdEndMins = timeToMinutes(stdEndStr || "18:00");
+      var actInMins = timeToMinutes(clockInStr);
+      var actOutMins = timeToMinutes(clockOutStr);
+
+      var totalWorkedMins = actOutMins - actInMins;
+      if (totalWorkedMins < 0) totalWorkedMins = 0;
+
+      var standardMinsRequired = stdEndMins - stdStartMins; // 正常應工作時間 (8小時 = 480分鐘)
+
+      var lateMins = 0;
+      var isOffset = false;
+      var diffStart = actInMins - stdStartMins;
+
+      // 1. 上班判定：15 分鐘寬限期與彈性工時
+      if (diffStart > 0) {
+        if (diffStart <= 15) {
+          // 15 分鐘以內寬限：不算遲到
+          lateMins = 0;
+        } else {
+          // 超過 15 分鐘遲到：檢查當天工時是否補足 8 小時
+          if (totalWorkedMins >= standardMinsRequired) {
+            lateMins = 0;
+            isOffset = true; // 遲到補足
+          } else {
+            lateMins = diffStart; // 未補足，依實際遲到分鐘計
+          }
+        }
+      }
+
+      // 2. 早退判定 (15 分鐘寬限)
+      var targetEndMins = stdEndMins;
+      if (diffStart < -15) {
+        targetEndMins = stdEndMins + diffStart;
+      }
+
+      var earlyMins = 0;
+      var diffEnd = targetEndMins - actOutMins;
+      if (diffEnd > 15) {
+        earlyMins = diffEnd;
+      }
+
+      var unoffsetMins = lateMins + earlyMins;
+
+      var eligibleStartMins=diffStart<0 && diffStart>=-15 ? stdStartMins : actInMins;
+      var otMins = Math.max(0,(actOutMins-eligibleStartMins)-standardMinsRequired);
+      var otTier1 = 0;
+      var otTier2 = 0;
+
+      if (otMins > 30) {
+        var otHours = otMins / 60;
+        if (otHours <= 2) {
+          otTier1 = otHours;
+        } else {
+          otTier1 = 2;
+          otTier2 = Math.min(otHours - 2, 2);
+        }
+      }
+
+      return {
+        workHours: Math.round((totalWorkedMins / 60) * 10) / 10,
+        otTier1: Math.round(otTier1 * 10) / 10,
+        otTier2: Math.round(otTier2 * 10) / 10,
+        lateMins: unoffsetMins,
+        isOffset: isOffset
+      };
+    }
+
+    // 🆕 升級 V6 彈性工時與補足判定月曆渲染 (適配手機版視圖)
+    function renderCalendar() {
+      var grid = document.getElementById("calendarGrid");
+      if (!grid) return;
+      grid.innerHTML = "";
+
+      var y = currentMonthDate.getFullYear();
+      var m = currentMonthDate.getMonth();
+      document.getElementById("calendarMonthLabel").innerText = `${y}-${String(m + 1).padStart(2, "0")}`;
+
+      var firstDay = new Date(y, m, 1).getDay();
+      var daysInMonth = new Date(y, m + 1, 0).getDate();
+
+      var targetAcc = allAccounts.find(a => a.username === viewTargetUsername) || currentUser;
+      var maxOffDays = parseInt(targetAcc.monthlyOffDays || 0, 10);
+      var records = allAttendance.filter(r => r.username === targetAcc.username);
+
+      var todayStr = normalizeDate(new Date());
+
+      for (var i = 0; i < firstDay; i++) {
+        var emptyCell = document.createElement("div");
+        emptyCell.className = "bg-slate-50/50 rounded-2xl min-h-[5.5rem] sm:min-h-[7rem] opacity-30";
+        grid.appendChild(emptyCell);
+      }
+
+      for (var d = 1; d <= daysInMonth; d++) {
+        var dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        var cellDate = new Date(y, m, d);
+        var dayOfWeek = cellDate.getDay();
+
+        var dayRec = records.find(r => normalizeDate(r.date) === dateStr);
+        var holiday = allHolidays.find(h => normalizeDate(h.date) === dateStr);
+
+        var currentStatus = localScheduleEdits[dateStr] !== undefined ? localScheduleEdits[dateStr] : (dayRec ? dayRec.status : "");
+
+        var cell = document.createElement("div");
+        var bgClass = "bg-white border-slate-100";
+        
+        if (maxOffDays === 0) {
+          if (dayOfWeek === 0) bgClass = "bg-rose-50/60 border-rose-100";
+          else if (dayOfWeek === 6) bgClass = "bg-indigo-50/40 border-indigo-100";
+        } else {
+          if (currentStatus === "排休") {
+            bgClass = "bg-emerald-50 border-emerald-400 ring-1 ring-emerald-200";
+          }
+        }
+
+        var workingDraft = pendingScheduleDrafts[getCurrentScheduleKey()];
+        if (workingDraft && (workingDraft.dates.indexOf(dateStr) >= 0 || (dayRec && dayRec.status === "排休"))) {
+          bgClass += " ring-2 ring-amber-300/70";
+        }
+
+        var isPastOrToday = (dateStr <= todayStr);
+        var isWorkday = (maxOffDays === 0) ? (dayOfWeek !== 0 && dayOfWeek !== 6) : (currentStatus !== "排休");
+
+        var badgeHtml = "";
+        var timeDetailHtml = ""; 
+
+        var hasClock = dayRec && (dayRec.clockIn || dayRec.clockOut);
+        var explicitlyAbsent = dayRec && String(dayRec.status || '').indexOf('曠工') >= 0;
+        var hasLeave = currentStatus === "排休" || (dayRec && (dayRec.status.indexOf("假") !== -1 || (dayRec.leaveHours > 0 && dayRec.status !== "排休")));
+
+        if (dayRec && (dayRec.clockIn || dayRec.clockOut)) {
+          var inStr = dayRec.clockIn ? `☀️${dayRec.clockIn}` : '';
+          var outStr = dayRec.clockOut ? `🌙${dayRec.clockOut}` : '';
+          timeDetailHtml = `<div class="text-[8px] sm:text-[10px] font-mono text-slate-600 truncate mt-0.5 leading-none space-y-0.5">
+            ${dayRec.clockIn ? `<div>${inStr}</div>` : ''}
+            ${dayRec.clockOut ? `<div>${outStr}</div>` : ''}
+          </div>`;
+        }
+
+        // 狀態標籤組裝 (包含手機版縮寫與樣式優化)
+        if (dayRec && dayRec.status && dayRec.status.indexOf("補打卡") !== -1) {
+          badgeHtml = `<div class="mt-1 text-[8px] sm:text-[10px] font-black px-1 py-0.5 rounded text-white bg-purple-600 shadow-sm truncate flex items-center justify-center gap-0.5"><i class="fa-solid fa-hourglass-half"></i> <span class="hidden sm:inline">補打卡(待審)</span><span class="sm:hidden">待審</span></div>`;
+        } else if (explicitlyAbsent) {
+          bgClass = "bg-rose-50 border-rose-200";
+          badgeHtml = '<div class="mt-1 text-[8px] sm:text-[10px] font-black px-1 py-0.5 rounded bg-rose-700 text-white text-center">已核定曠工</div>';
+        } else if (hasClock) {
+          var bgBadge = "bg-emerald-500";
+          var statusTxt = dayRec.status || "正常";
+          var computed = calculateWorkAndOvertime(dayRec.clockIn, dayRec.clockOut, targetAcc.standardStart, targetAcc.standardEnd);
+          // 優先用新版 15 分鐘規則呈現；歷史打卡仍保留原始時間。
+          if (dayRec.clockIn && dayRec.clockOut) {
+            statusTxt = computed.isOffset ? "正常(遲到補足)" : computed.lateMins > 0 ? "遲到 " + computed.lateMins + " 分鐘" : "正常";
+          }
+          if (computed.isOffset) bgBadge = "bg-teal-600";
+          else if (computed.lateMins > 0) bgBadge = "bg-amber-500";
+
+          var incomplete = dateStr < todayStr && (!dayRec.clockIn || !dayRec.clockOut);
+          badgeHtml = incomplete
+            ? '<div class="mt-1 text-[8px] sm:text-[10px] font-black px-1 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 text-center">⚠ 缺' + (!dayRec.clockIn ? '上班' : '下班') + '卡</div>'
+            : `<div class="mt-1 text-[8px] sm:text-[10px] font-black px-1 py-0.5 rounded text-white ${bgBadge} shadow-sm truncate flex items-center justify-center gap-0.5" title="${statusTxt}"><i class="fa-solid fa-circle-check"></i><span class="truncate">${statusTxt}</span></div>`;
+        } else if (hasLeave) {
+          var leaveName = currentStatus || dayRec.status || "請假";
+          badgeHtml = `<div class="mt-1 text-[8px] sm:text-[10px] font-black px-1 py-0.5 rounded text-white bg-indigo-500 shadow-sm truncate flex items-center justify-center gap-0.5">
+            <i class="fa-solid fa-calendar-minus"></i>
+            <span class="truncate">${leaveName === "排休" ? "✓ 排休" : leaveName}</span>
+          </div>`;
+        } else if (holiday && maxOffDays === 0) {
+          bgClass = "bg-rose-100/70 border-rose-200";
+          badgeHtml = `<div class="mt-1 text-[8px] sm:text-[10px] font-black px-1 py-0.5 rounded text-rose-800 bg-rose-200/90 truncate flex items-center justify-center gap-0.5">
+            <i class="fa-solid fa-flag"></i>
+            <span class="truncate">${holiday.name}</span>
+          </div>`;
+        } else if (isWorkday && dateStr < todayStr) {
+          bgClass = "bg-amber-50 border-amber-200";
+          badgeHtml = '<div class="mt-1 text-[8px] sm:text-[10px] font-black px-1 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 text-center" title="尚未核定曠工，點選可申請補卡">⚠ 缺打卡</div>';
+        }
+
+        var lockedMonth = isScheduleLocked(targetAcc.username, scheduleYearMonth());
+        cell.className = `calendar-day-interactive flex flex-col justify-between p-1 sm:p-2 rounded-2xl border ${bgClass} min-h-[5.5rem] sm:min-h-[7rem] shadow-sm transition hover:shadow-md relative overflow-hidden ${lockedMonth ? "cursor-default" : ""}`;
+        cell.title = isOffDayModeActive ? (lockedMonth ? "本月排休已鎖定" : (currentStatus === "排休" ? "取消排休" : "設定排休")) : "點選日期：查看明細、請假、備註或管理員操作";
+        cell.setAttribute("onclick", `handleCalendarCellClick('${dateStr}')`);
+        cell.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="text-xs sm:text-sm font-black text-slate-700">${d}</span>
+            ${lockedMonth ? '<i class="fa-solid fa-lock text-[9px] text-slate-400"></i>' : (currentStatus === "排休" ? '<i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i>' : (dateStr === todayStr ? '<span class="w-2 h-2 rounded-full bg-indigo-600 ring-2 ring-indigo-200"></span>' : ''))}
+          </div>
+          <div class="flex-1 flex flex-col justify-end">
+            ${timeDetailHtml}
+            ${badgeHtml}
+          </div>
+        `;
+        grid.appendChild(cell);
+      }
+    }
+
+    function timeToMinutes(t) {
+      var p = String(t).split(":");
+      return p.length < 2 ? 0 : parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+    }
+
+    function calculateMonthlyStats() {
+      var y = currentMonthDate.getFullYear();
+      var m = currentMonthDate.getMonth();
+      var prefix = `${y}-${String(m + 1).padStart(2, "0")}`;
+      var todayStr = normalizeDate(new Date());
+
+      var targetUsername = viewTargetUsername || currentUser.username;
+      var targetAcc = allAccounts.find(a => a.username === targetUsername) || currentUser;
+      var maxOffDays = parseInt(targetAcc.monthlyOffDays || 0, 10);
+      var records = allAttendance.filter(r => r.username === targetUsername && r.date.indexOf(prefix) === 0);
+
+      var lateCount = 0;
+      var lateMinsTotal = 0;
+      var otHoursTotal = 0;
+      var leaveDaysCount = 0;
+
+      var daysInMonth = new Date(y, m + 1, 0).getDate();
+
+      for (var d = 1; d <= daysInMonth; d++) {
+        var dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        var cellDate = new Date(y, m, d);
+        var dayOfWeek = cellDate.getDay();
+        var dayRec = records.find(r => normalizeDate(r.date) === dateStr);
+        var holiday = allHolidays.find(h => normalizeDate(h.date) === dateStr);
+
+        var currentStatus = localScheduleEdits[dateStr] !== undefined ? localScheduleEdits[dateStr] : (dayRec ? dayRec.status : "");
+        var isWorkday = (maxOffDays === 0) ? (dayOfWeek !== 0 && dayOfWeek !== 6 && !holiday) : (currentStatus !== "排休");
+        var hasClock = dayRec && (dayRec.clockIn || dayRec.clockOut);
+        var hasLeave = currentStatus === "排休" || (dayRec && (dayRec.status.indexOf("假") !== -1 || (dayRec.leaveHours > 0 && dayRec.status !== "排休")));
+
+        if (dayRec) {
+          var computed = calculateWorkAndOvertime(dayRec.clockIn, dayRec.clockOut, targetAcc.standardStart, targetAcc.standardEnd);
+          if (!computed.isOffset && computed.lateMins > 0) {
+            lateCount++;
+            lateMinsTotal += computed.lateMins;
+          }
+          otHoursTotal += (computed.otTier1 + computed.otTier2);
+        }
+
+        if (hasLeave) {
+          leaveDaysCount += (dayRec && dayRec.leaveHours ? (dayRec.leaveHours / 8) : 1);
+        } else if (!hasClock && isWorkday && dateStr <= todayStr) {
+          leaveDaysCount += 1;
+        }
+      }
+
+      var elLateC = document.getElementById("statLateCount");
+      var elLateM = document.getElementById("statLateMinutes");
+      var elOT = document.getElementById("statOvertime");
+      var elLeave = document.getElementById("statLeaveDays");
+      var elSpl = document.getElementById("statSpecialLeave");
+      var elSplInit = document.getElementById("statSpecialLeaveInitial");
+
+      if (elLateC) elLateC.innerText = lateCount;
+      if (elLateM) elLateM.innerText = lateMinsTotal;
+      if (elOT) elOT.innerText = otHoursTotal.toFixed(1);
+      if (elLeave) elLeave.innerText = leaveDaysCount.toFixed(1);
+
+      var leaveBalance=allLeaveBalances.find(function(x){return x.username===targetUsername;});
+      var initialDays=leaveBalance ? Number(leaveBalance.annualDays||0) : Number(targetAcc.specialLeaveDays||0);
+      var totalHours=leaveBalance ? Number(leaveBalance.remainingHours||0) : initialDays*8;
+      if(elSplInit) elSplInit.innerText=leaveBalance && leaveBalance.hireDate ? `本期 ${initialDays}天` : `初始 ${initialDays}天`;
+      if(elSpl) elSpl.innerText=totalHours.toFixed(1);
+    }
+
+    function openOvertimeSalaryModal() {
+      document.getElementById("overtimeSalaryModal").classList.remove("hidden");
+      var acc=allAccounts.find(function(a){return a.username===viewTargetUsername;})||currentUser;
+      document.getElementById('inputMonthlySalary').value=Number(acc.monthlySalary)||0;
+      recalculateOvertimeSalary();
+    }
+
+    function closeOvertimeSalaryModal() {
+      document.getElementById("overtimeSalaryModal").classList.add("hidden");
+    }
+
+    function recalculateOvertimeSalary() {
+      var salary = parseFloat(document.getElementById("inputMonthlySalary").value || 36000);
+      var hourlyRate = Math.round((salary / 30 / 8) * 100) / 100;
+      document.getElementById("lblHourlyRate").innerText = hourlyRate;
+
+      var y = currentMonthDate.getFullYear();
+      var m = currentMonthDate.getMonth();
+      var prefix = `${y}-${String(m + 1).padStart(2, "0")}`;
+
+      var targetUsername = viewTargetUsername || currentUser.username;
+      var targetAcc = allAccounts.find(a => a.username === targetUsername) || currentUser;
+      var records = allAttendance.filter(r => r.username === targetUsername && r.date.indexOf(prefix) === 0);
+
+      var totalTier1 = 0;
+      var totalTier2 = 0;
+
+      records.forEach(r => {
+        var computed = calculateWorkAndOvertime(r.clockIn, r.clockOut, targetAcc.standardStart, targetAcc.standardEnd);
+        totalTier1 += computed.otTier1;
+        totalTier2 += computed.otTier2;
+      });
+
+      var amount1 = Math.round(totalTier1 * hourlyRate * 1.34);
+      var amount2 = Math.round(totalTier2 * hourlyRate * 1.67);
+      var totalAmt = amount1 + amount2;
+
+      document.getElementById("lblOtTier1Hours").innerText = totalTier1.toFixed(1);
+      document.getElementById("lblOtTier1Amount").innerText = amount1.toLocaleString();
+      document.getElementById("lblOtTier2Hours").innerText = totalTier2.toFixed(1);
+      document.getElementById("lblOtTier2Amount").innerText = amount2.toLocaleString();
+      document.getElementById("lblOtTotalAmount").innerText = totalAmt.toLocaleString();
+    }
+
+    var v6PayrollData=null;
+    var v6SessionToken="";
+    var V63_REMEMBER_KEY="att_v63_remember_device";
+    var v63FullDataLoaded=false;
+    var v63FullDataPromise=null;
+    var v63SessionReady=false;
+    function v6ApiUrl(query){return gasUrl+"?"+query+"&token="+encodeURIComponent(v6SessionToken);}
+    async function v6Call(query){var r=await fetch(v6ApiUrl(query),{cache:"no-store"});var d=await r.json();if(d.result!=="success")throw Error(d.message||"API 失敗");return d;}
+    function v6Esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
+    function v6Money(v){return 'NT$ '+Math.round(v||0).toLocaleString('zh-TW');}
+    function v6IsAdmin(){return currentUser&&String(currentUser.role).toLowerCase()==='admin';}
+    function v6SelectedMonth(){var d=v6IsAdmin()?currentMonthDate:new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
+    function openPayrollModal() {
+      if(!v6SessionToken){showCustomAlert("請重新登入","此版本的薪資報表需要後端驗證登入","warning");return;}
+      document.getElementById("payrollModal").classList.remove("hidden");
+      document.getElementById("payrollMonthTitle").textContent=v6SelectedMonth()+" ｜ "+(viewTargetUsername||currentUser.username);
+      ["v6AdminAllBtn","v6AdminBonusBtn"].forEach(function(id){document.getElementById(id).classList.toggle('hidden',!v6IsAdmin());});
+      document.getElementById('v6CsvBtn').classList.add('hidden');
+      document.getElementById('v6BonusEditor').classList.add('hidden');
+      document.getElementById('v6PayrollResult').textContent='正在取得後端薪資核算...';
+      generatePayrollReport();
+    }
+    function closePayrollModal(){document.getElementById('payrollModal').classList.add('hidden');}
+    function v622PayrollOptions(){return '&includeLateDeduction='+document.getElementById('v622IncludeLate').checked+'&includeOvertimePay='+document.getElementById('v622IncludeOT').checked;}
+    function v622RefreshReport(){
+      if(v6PayrollData && v6PayrollData.scope==='all')v6LoadAllPayroll();
+      else generatePayrollReport();
+    }
+    async function generatePayrollReport(){
+      document.getElementById('v6PayrollResult').textContent='正在重新核算薪資...';
+      var user=v6IsAdmin()?(viewTargetUsername||currentUser.username):currentUser.username;
+      try{
+        var data=await v6Call('action=payrollReport&yearMonth='+encodeURIComponent(v6SelectedMonth())+'&username='+encodeURIComponent(user)+v622PayrollOptions());
+        v6PayrollData=data;
+        v6RenderPayroll(data);
+        document.getElementById('v6CsvBtn').classList.add('hidden');
+        if(v6IsAdmin()&&!document.getElementById('v6BonusEditor').classList.contains('hidden'))v6RefreshBonuses();
+      }catch(e){document.getElementById('v6PayrollResult').textContent='無法產生：'+e.message;}
+    }
+    function v64MissingClockAlert(count,printed){
+      if(!count)return '';
+      var message='有 '+count+' 天缺少打卡或請假紀錄，未直接視為曠工扣薪，需管理員核對。';
+      return printed ? '<div class="missing-alert"><b>⚠ 出勤資料待核對（'+count+' 天）</b><p>'+v6Esc(message)+'</p></div>' :
+        '<div role="alert" class="mt-4 p-4 sm:p-5 rounded-2xl border-2 border-rose-500 bg-rose-50 text-rose-900 shadow-sm"><div class="flex items-center gap-2 text-base sm:text-lg font-black"><i class="fa-solid fa-triangle-exclamation"></i> 出勤資料待核對（'+count+' 天）</div><p class="mt-2 font-extrabold text-sm sm:text-base leading-relaxed">'+v6Esc(message)+'</p></div>';
+    }
+    function v6RenderPayroll(data){
+      var root=document.getElementById('v6PayrollResult');
+      if(data.scope==='all'){
+        var reports=data.reports||[],totalNet=0,totalCost=0;
+        var markup='<div class="overflow-x-auto"><table class="w-full text-xs text-right"><thead><tr class="bg-slate-100"><th class="p-2 text-left">員工</th><th class="p-2">本薪</th><th class="p-2">獎金＋補貼</th><th class="p-2">員工保費等</th><th class="p-2">實領</th><th class="p-2">公司總成本</th></tr></thead><tbody>';
+        reports.forEach(function(r){totalNet+=r.netSalary;totalCost+=r.employerCost;markup+='<tr class="border-b"><td class="p-2 text-left">'+v6Esc(r.name)+'</td><td class="p-2">'+v6Money(r.baseSalary)+'</td><td class="p-2">'+v6Money(r.fixedAllowances+r.variableBonuses)+'</td><td class="p-2">'+v6Money(r.insurance.employee)+'</td><td class="p-2 font-bold">'+v6Money(r.netSalary)+'</td><td class="p-2">'+v6Money(r.employerCost)+'</td></tr>';});
+        markup+='</tbody><tfoot><tr class="font-black bg-indigo-50"><td class="p-2">總計</td><td colspan="3"></td><td class="p-2">'+v6Money(totalNet)+'</td><td class="p-2">'+v6Money(totalCost)+'</td></tr></tfoot></table></div>';
+        var pending=reports.filter(function(r){return (r.missingClockDays||[]).length;});if(pending.length){var totalMissing=pending.reduce(function(n,r){return n+r.missingClockDays.length;},0);markup+=v64MissingClockAlert(totalMissing,false);markup+='<p class="mt-2 text-sm font-bold text-rose-900">待核對員工：'+pending.map(function(r){return v6Esc(r.name)+'（'+r.missingClockDays.length+' 天）';}).join('、')+'</p>';}markup+='<p class="text-xs text-amber-700 mt-3">公司成本＝應發薪資＋雇主保費及勞退提繳；不包含未核定額外成本。</p>';
+        root.innerHTML=markup;return;
+      }
+      var r=data.report;
+      var lines=[['資料庫月薪',r.baseSalary],['平日加班（前2小時）',r.otPay1],['平日加班（第3–4小時）',r.otPay2],['固定補貼',r.fixedAllowances],['非固定獎金',r.variableBonuses],['遲到／早退扣薪',-r.lateDeduction],['事假／曠工扣薪（'+r.fullDays+' 天）',-r.fullDeduction],['病假扣薪',-r.halfDeduction]];
+      (r.insurance.items||[]).forEach(function(i){if(i.employee)lines.push([i.name+'（員工負擔）',-i.employee]);});
+      var markup='<div class="mb-3"><b>'+v6Esc(r.name)+'</b>｜'+v6Esc(r.yearMonth)+' 月｜<span class="font-bold text-indigo-700">底薪由帳號資料鎖定</span></div>';
+      markup+='<div class="grid grid-cols-2 gap-2 mb-3"><div class="bg-indigo-50 rounded-xl p-3"><div class="text-xs text-slate-500">應發總額</div><div class="text-lg font-black">'+v6Money(r.gross)+'</div></div><div class="bg-emerald-50 rounded-xl p-3"><div class="text-xs text-slate-500">本月預估實領</div><div class="text-lg font-black text-emerald-700">'+v6Money(r.netSalary)+'</div></div></div>';
+      markup+='<table class="w-full text-xs"><tbody>';
+      lines.forEach(function(line){markup+='<tr class="border-b"><td class="p-2">'+v6Esc(line[0])+'</td><td class="p-2 text-right font-mono '+(line[1]<0?'text-rose-600':'')+'">'+(line[1]<0?'- ':'+ ')+v6Money(Math.abs(line[1]))+'</td></tr>';});
+      markup+='</tbody></table><div class="font-extrabold text-right pt-3">實領 '+v6Money(r.netSalary)+'</div>';
+      if(v6IsAdmin())markup+='<div class="mt-3 p-3 rounded-xl bg-slate-100 text-xs">雇主負擔：'+v6Money(r.insurance.employer)+'；公司總成本：<b>'+v6Money(r.employerCost)+'</b></div>';
+      if(r.bonuses&&r.bonuses.length){markup+='<div class="mt-3 text-xs"><b>已計入的獎金／補貼：</b> '+r.bonuses.map(function(x){return v6Esc(x.title)+' '+v6Money(x.amount);}).join('、')+'</div>';}
+      if(r.missingClockDays&&r.missingClockDays.length)markup+=v64MissingClockAlert(r.missingClockDays.length,false);
+      markup+='<p class="text-xs text-slate-500 mt-3">'+(r.warnings||[]).map(v6Esc).join('；')+'</p>';
+      root.innerHTML=markup;
+    }
+    async function v6LoadAllPayroll(){if(!v6IsAdmin())return;
+      document.getElementById('v6PayrollResult').textContent='正在核算全員薪資...';
+      try{var d=await v6Call('action=payrollReport&scope=all&yearMonth='+encodeURIComponent(v6SelectedMonth())+v622PayrollOptions());v6PayrollData=d;v6RenderPayroll(d);document.getElementById('v6CsvBtn').classList.remove('hidden');}
+      catch(e){document.getElementById('v6PayrollStatus').textContent=e.message;}}
+    function v6ToggleBonusEditor(){if(!v6IsAdmin())return;var el=document.getElementById('v6BonusEditor');el.classList.toggle('hidden');if(!el.classList.contains('hidden'))v6RefreshBonuses();}
+    function v6BonusKindChanged(){var fixed=document.getElementById('v6BonusKind').value==='固定補貼';document.getElementById('v6BonusRecurring').disabled=!fixed;if(!fixed)document.getElementById('v6BonusRecurring').checked=false;}
+    async function v6RefreshBonuses(){if(!v6IsAdmin())return;
+      var user=viewTargetUsername||currentUser.username;
+      try{var data=await v6Call('action=payrollBonuses&username='+encodeURIComponent(user)+'&yearMonth='+encodeURIComponent(v6SelectedMonth()));
+        var el=document.getElementById('v6BonusRows');el.replaceChildren();
+        data.bonuses.forEach(function(x){var div=document.createElement('div');div.className='flex flex-wrap items-center gap-2 justify-between bg-white border rounded-xl p-2';
+          var span=document.createElement('span');span.textContent=x.kind+'｜'+x.title+'｜'+v6Money(x.amount)+(x.yearMonth==='*'?'｜每月':'')+(x.date?'｜'+x.date:'');div.appendChild(span);
+          var group=document.createElement('div');group.className='flex gap-2 items-center';
+          var cb=document.createElement('input');cb.type='checkbox';cb.checked=x.active;cb.title='啟用／停用';cb.addEventListener('change',async function(){var next=cb.checked;cb.disabled=true;var ok=await v6SubmitBonus({id:x.id,username:x.username,yearMonth:x.yearMonth,date:x.date,kind:x.kind,title:x.title,amount:x.amount,active:next,notes:x.notes});if(!ok)cb.checked=!next;cb.disabled=false;});
+          var edit=document.createElement('button');edit.textContent='編輯';edit.className='text-indigo-700 underline';edit.onclick=function(){v6FillBonus(x);};
+          var del=document.createElement('button');del.textContent='刪除';del.className='text-rose-700 underline';del.onclick=function(){v6DeleteBonus(x.id);};
+          group.append(cb,edit,del);div.append(group);el.append(div);
+        });if(!data.bonuses.length)el.textContent='本月尚無獎金設定';
+      }catch(e){document.getElementById('v6PayrollStatus').textContent=e.message;}}
+    var v6EditingBonusId='';
+    function v6FillBonus(x){v6EditingBonusId=x.id;document.getElementById('v6BonusKind').value=x.kind;document.getElementById('v6BonusTitle').value=x.title;document.getElementById('v6BonusAmount').value=x.amount;document.getElementById('v6BonusDate').value=x.date||'';document.getElementById('v6BonusRecurring').checked=x.yearMonth==='*';document.getElementById('v6BonusActive').checked=x.active;document.getElementById('v6BonusNotes').value=x.notes||'';v6BonusKindChanged();}
+    var v61UploadBusy=false;
+    var v61QuickContext=null;
+    function v61UploadClose(){if(v61UploadBusy)return;document.getElementById('v61UploadModal').classList.add('hidden');}
+    function v61UploadStart(){
+      if(v61UploadBusy)return false;
+      v61UploadBusy=true;
+      document.getElementById('v61UploadModal').classList.remove('hidden');
+      document.getElementById('v61UploadIcon').innerHTML='<i class="fa-solid fa-cloud-arrow-up"></i>';
+      document.getElementById('v61UploadIcon').className='text-center text-indigo-600 text-3xl';
+      document.getElementById('v61UploadHeading').textContent='正在上傳獎金資料';
+      document.getElementById('v61UploadMessage').textContent='等待雲端試算表回覆，請勿關閉或重複送出';
+      var bar=document.getElementById('v61UploadBar');bar.className='v61-upload-indeterminate h-full bg-indigo-600 rounded-full';bar.style.width='32%';
+      document.getElementById('v61UploadPercent').textContent='傳送中（不顯示虛假的百分比）';
+      document.getElementById('v61UploadDone').classList.add('hidden');
+      return true;
+    }
+    function v61UploadFinish(ok,message){
+      v61UploadBusy=false;
+      document.getElementById('v61UploadHeading').textContent=ok?'雲端上傳成功':'上傳失敗';
+      document.getElementById('v61UploadMessage').textContent=message;
+      document.getElementById('v61UploadIcon').className='text-center text-3xl '+(ok?'text-emerald-600':'text-rose-600');
+      document.getElementById('v61UploadIcon').innerHTML=ok?'<i class="fa-solid fa-circle-check"></i>':'<i class="fa-solid fa-circle-exclamation"></i>';
+      var bar=document.getElementById('v61UploadBar');bar.className='h-full rounded-full '+(ok?'bg-emerald-600':'bg-rose-500');bar.style.width=ok?'100%':'0%';
+      document.getElementById('v61UploadPercent').textContent=ok?'100% — 伺服器已確認寫入':'未完成，請檢查錯誤並重試';
+      document.getElementById('v61UploadDone').classList.remove('hidden');
+    }
+    function v61OpenQuick(dateStr){
+      if(!v6IsAdmin())return;
+      var selectedUser=viewTargetUsername||currentUser.username;
+      v61QuickContext={date:dateStr,username:selectedUser};
+      document.getElementById('v61QuickDay').textContent=dateStr+' ｜ '+selectedUser;
+      ['v61QuickTitle','v61QuickAmount','v61QuickNotes'].forEach(function(id){document.getElementById(id).value='';});
+      document.getElementById('v61QuickBonusModal').classList.remove('hidden');
+      document.getElementById('v61QuickTitle').focus();
+    }
+    function v61CloseQuick(){if(v61UploadBusy)return;document.getElementById('v61QuickBonusModal').classList.add('hidden');}
+    async function v61SaveQuick(){
+      if(!v6IsAdmin()||!v61QuickContext||v61UploadBusy)return;
+      var title=document.getElementById('v61QuickTitle').value.trim();
+      var amount=document.getElementById('v61QuickAmount').value.trim();
+      if(!title||amount===''||!Number.isFinite(Number(amount))||Number(amount)<0){showCustomAlert('輸入有誤','請輸入獎金名稱及有效金額','warning');return;}
+      var context=v61QuickContext;
+      var ok=await v6SubmitBonus({username:context.username,yearMonth:context.date.slice(0,7),date:context.date,kind:'非固定獎金',title:title,amount:amount,active:true,notes:document.getElementById('v61QuickNotes').value});
+      if(ok)v61CloseQuick();
+    }
+    async function v6SubmitBonus(data){
+      if(!v6IsAdmin()||!v61UploadStart())return false;
+      try{
+        var qs=new URLSearchParams(Object.assign({action:'savePayrollBonus'},data)).toString();
+        var result=await v6Call(qs);
+        if(!result.id)throw Error('伺服器未提供獎金紀錄編號，請查詢資料庫確認是否已寫入，勿立即重複送出');
+        v6EditingBonusId='';
+        v61UploadFinish(true,'獎金已寫入「薪資獎金」工作表。紀錄編號：'+result.id);
+        document.getElementById('v6PayrollStatus').textContent='獎金已上傳完成';
+        // 寫入成功後重新取得報表；若目前正檢視其他月份，仍保留獎金於所屬月份。
+        if(!document.getElementById('payrollModal').classList.contains('hidden')){
+          await generatePayrollReport();
+          if(v6IsAdmin() && !document.getElementById('v6BonusEditor').classList.contains('hidden'))await v6RefreshBonuses();
+        }
+        // 更新日曆的雲端資料，以便立即在指定日期看到獎金備註。
+        try{await fetchSpreadsheetData(true);}catch(refreshErr){console.warn("獎金已儲存，但畫面同步失敗",refreshErr);}
+        return true;
+      }catch(e){v61UploadFinish(false,e.message);document.getElementById('v6PayrollStatus').textContent='儲存失敗：'+e.message;return false;}
+    }
+    async function v6SaveBonus(){if(!v6IsAdmin()||v61UploadBusy)return;var recur=document.getElementById('v6BonusRecurring').checked;var data={id:v6EditingBonusId,username:viewTargetUsername||currentUser.username,yearMonth:recur?'*':v6SelectedMonth(),kind:document.getElementById('v6BonusKind').value,title:document.getElementById('v6BonusTitle').value,amount:document.getElementById('v6BonusAmount').value,date:recur?'':document.getElementById('v6BonusDate').value,active:document.getElementById('v6BonusActive').checked,notes:document.getElementById('v6BonusNotes').value};await v6SubmitBonus(data);}
+    async function v6DeleteBonus(id){if(!v6IsAdmin()||!confirm('確定刪除這筆獎金？'))return;try{await v6Call('action=deletePayrollBonus&id='+encodeURIComponent(id));await generatePayrollReport();await v6RefreshBonuses();}catch(e){document.getElementById('v6PayrollStatus').textContent=e.message;}}
+    function v61PrintRow(label,value,kind){return '<div class="pr-row"><span>'+v6Esc(label)+'</span><strong class="'+(kind||'')+'">'+(value<0?'− ':'+ ')+v6Money(Math.abs(value))+'</strong></div>';}
+    function v61PrintPerson(r,includeCost){
+      var ot=(r.otPay1||0)+(r.otPay2||0),bonus=(r.fixedAllowances||0)+(r.variableBonuses||0);
+      var deductions=(r.attendanceDeductions||0)+(r.insurance.employee||0);
+      var html='<section class="pay-card"><div class="person-head"><div><div class="eyebrow">員工薪資明細</div><h2>'+v6Esc(r.name)+'</h2><small>'+v6Esc(r.yearMonth)+' ｜ 依資料庫月薪核算</small></div><div class="salary-main"><small>本月實領薪資</small><div>'+v6Money(r.netSalary)+'</div></div></div>';
+      html+='<div class="three"><div><small>固定月薪</small><strong>'+v6Money(r.baseSalary)+'</strong></div><div><small>加薪／獎金與加班</small><strong class="positive">+ '+v6Money(ot+bonus)+'</strong></div><div><small>缺勤與法定扣款</small><strong class="negative">− '+v6Money(deductions)+'</strong></div></div>';
+      html+='<div class="detail-cols"><div class="detail"><h3>＋ 薪資加項</h3>'+v61PrintRow('資料庫月薪',r.baseSalary)+v61PrintRow('加班費',ot)+v61PrintRow('固定補貼',r.fixedAllowances||0)+v61PrintRow('非固定獎金',r.variableBonuses||0)+'</div>';
+      html+='<div class="detail"><h3>− 薪資扣項</h3>'+v61PrintRow('遲到／早退',-(r.lateDeduction||0),'negative')+v61PrintRow('事假／曠工',-(r.fullDeduction||0),'negative')+v61PrintRow('病假',-(r.halfDeduction||0),'negative');
+      (r.insurance.items||[]).forEach(function(i){if(i.employee)html+=v61PrintRow(i.name,-i.employee,'negative');});html+='</div></div>';
+      if(r.bonuses&&r.bonuses.length){html+='<div class="extra"><b>本月獎金明細</b>：'+r.bonuses.map(function(b){return v6Esc(b.title)+'（'+v6Money(b.amount)+'）';}).join('、')+'</div>';}
+      if(includeCost){html+='<div class="cost"><div><small>雇主負擔保費與勞退</small><strong>'+v6Money(r.insurance.employer)+'</strong></div><div><small>公司本月總人事成本</small><strong>'+v6Money(r.employerCost)+'</strong></div></div>';}
+      if((r.warnings||[]).length)html+='<div class="extra">核對事項：'+r.warnings.map(v6Esc).join('；')+'</div>';
+      if((r.missingClockDays||[]).length)html+=v64MissingClockAlert(r.missingClockDays.length,true);
+      return html+'</section>';
+    }
+    function v6PrintPayroll(){
+      if(!v6PayrollData){showCustomAlert('尚無報表','請先產生薪資報表','warning');return;}
+      var data=v6PayrollData,all=data.scope==='all';
+      if(all&&!v6IsAdmin()){showCustomAlert('權限不足','只有管理員能列印全員報表','warning');return;}
+      var list=all?(data.reports||[]):[data.report];
+      if(!list.length||!list[0])return;
+      var totalNet=list.reduce(function(sum,r){return sum+r.netSalary;},0),totalCost=list.reduce(function(sum,r){return sum+r.employerCost;},0);
+      var content='<header class="report-title"><div><div class="eyebrow">PAYROLL STATEMENT</div><h1>'+v6Esc(v6SelectedMonth())+' 薪資結算明細</h1><small>'+ (all?'全員薪資與公司成本':'員工個人薪資單') +'</small></div><div class="logo">薪資報表</div></header>';
+      if(all)content+='<div class="summary"><div><small>全員實領合計</small><strong>'+v6Money(totalNet)+'</strong></div><div><small>公司人事成本合計</small><strong>'+v6Money(totalCost)+'</strong></div></div>';
+      content+=list.map(function(r){return v61PrintPerson(r,v6IsAdmin());}).join('');
+      content+='<footer>結算選項：遲到／早退扣薪 '+(document.getElementById('v622IncludeLate').checked?'計入':'不計入')+'；加班費 '+(document.getElementById('v622IncludeOT').checked?'計入':'不計入')+'。依現有資料試算，未納入未核定的所得稅、補充保費及其他調整。正式發薪前請核對出勤、投保金額與獎金性質。</footer>';
+      var style=`@page{size:A4;margin:13mm}*{box-sizing:border-box}body{font-family:system-ui,'Noto Sans TC',sans-serif;color:#172033;background:#fff;margin:0;font-size:12px}.report-title{display:flex;justify-content:space-between;align-items:start;border-bottom:3px solid #303a66;padding-bottom:15px;margin-bottom:18px}.eyebrow{font-weight:800;letter-spacing:2px;color:#61708b;font-size:9px}h1{font-size:24px;margin:4px 0}small{font-size:10px;color:#677489}.logo{background:#303a66;color:white;border-radius:9px;padding:10px;font-weight:bold}.summary,.three,.cost{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.summary{margin-bottom:18px}.summary>div{padding:16px;background:#f0f3ff;border-radius:10px}.summary strong{display:block;font-size:23px;margin-top:6px}.pay-card{border:1px solid #dce2eb;border-radius:13px;overflow:hidden;margin-bottom:18px;break-inside:avoid;page-break-inside:avoid}.person-head{background:#eff4ff;padding:17px;display:flex;justify-content:space-between;align-items:center;gap:12px}.person-head h2{font-size:21px;margin:3px 0}.salary-main{text-align:right}.salary-main div{font-size:29px;font-weight:900;color:#116e53}.salary-main small{display:block}.three{grid-template-columns:repeat(3,1fr);padding:13px;gap:8px}.three>div{border:1px solid #ecedf2;padding:10px;border-radius:8px}.three strong{display:block;font-size:17px;margin-top:6px}.positive{color:#117c5c}.negative{color:#ba3049}.detail-cols{display:grid;grid-template-columns:1fr 1fr;gap:13px;padding:0 13px 12px}.detail{border:1px solid #e7eaf0;border-radius:9px;padding:11px}.detail h3{font-size:12px;margin:0 0 10px}.pr-row{display:flex;justify-content:space-between;gap:5px;border-top:1px dashed #eceff5;padding:7px 0}.pr-row strong{white-space:nowrap}.cost{padding:12px 15px;background:#f3f5fa}.cost strong{display:block;font-size:17px}.extra{padding:8px 15px;color:#4f5e70;font-size:10px}.missing-alert{margin:12px 14px 16px;padding:14px 16px;border:3px solid #b91c1c;background:#fff1f2;color:#881337;border-radius:10px;break-inside:avoid;page-break-inside:avoid}.missing-alert b{font-size:16px;font-weight:900;display:block}.missing-alert p{font-size:13px;font-weight:800;line-height:1.5;margin:7px 0 0}.report-title,.pay-card,.missing-alert{print-color-adjust:exact;-webkit-print-color-adjust:exact}footer{font-size:10px;color:#667085;margin-top:18px}`;
+      var w=window.open('','_blank');if(!w){showCustomAlert('無法列印','請允許瀏覽器開啟新視窗','warning');return;}
+      w.document.write('<!doctype html><html lang="zh-TW"><head><meta charset="utf-8"><title>'+v6Esc(v6SelectedMonth())+' 薪資明細</title><style>'+style+'</style></head><body>'+content+'</body></html>');w.document.close();w.focus();setTimeout(function(){w.print();},350);
+    }
+    function v6ExportPayrollCsv(){if(!v6IsAdmin()||!v6PayrollData||v6PayrollData.scope!=='all')return;var rows=[['⚠ 出勤核對警示','待核對天數','月份','員工','本薪','加班費','固定補貼','非固定獎金','缺勤扣薪','員工保費與自提','實領','雇主保費與勞退','公司成本']];v6PayrollData.reports.forEach(function(r){var missing=(r.missingClockDays||[]).length;rows.push([missing?'⚠ 有 '+missing+' 天缺少打卡或請假紀錄，未直接視為曠工扣薪，需管理員核對。':'無待核對缺卡',missing,r.yearMonth,r.name,r.baseSalary,r.otPay1+r.otPay2,r.fixedAllowances,r.variableBonuses,r.attendanceDeductions,r.insurance.employee,r.netSalary,r.insurance.employer,r.employerCost]);});var csv='\ufeff'+rows.map(function(row){return row.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=v6SelectedMonth()+'_全員薪資與公司成本.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);}
+
+    async function submitMonthlyLeave(skipSchedule) {
+      skipSchedule = skipSchedule === true;
+      var acc = targetScheduleAccount();
+      var ym = scheduleYearMonth();
+      var max = parseInt(acc.monthlyOffDays || 0, 10);
+      if (max <= 0 && !skipSchedule) { showCustomAlert("提示", "此員工無需排班，可直接鎖定月份。", "warning"); return; }
+      if (isScheduleLocked(acc.username, ym)) { showCustomAlert("本月已鎖定", "此月份已完成排休，不能再次提交。", "warning"); return; }
+      var dates = skipSchedule ? [] : getSelectedScheduleDays(acc.username, ym);
+      if (!skipSchedule && !dates.length) { showCustomAlert("尚未排休", "請先在月曆點選至少一天排休；若本月無需排班，請選擇直接鎖定。", "warning"); return; }
+      if (skipSchedule && getSelectedScheduleDays(acc.username, ym).length) { showCustomAlert("已有排休資料", "這個月已有排休日期或草稿，請進入排班模式完成，不能用無需排班覆蓋。", "warning"); return; }
+      var warning = skipSchedule ? "本月沒有排休安排，將直接鎖定月份。\n\n" : dates.length < max ? "目前選擇 " + dates.length + "/" + max + " 天，還有 " + (max-dates.length) + " 天未排。\n\n" : "已選滿 " + dates.length + " 天。\n\n";
+      if (!window.confirm(warning + "正式完成後會寫入考勤表並鎖定 " + ym + "，無法再次自行修改。確定提交嗎？")) return;
+      clearTimeout(scheduleAutoSaveTimer);
+      showLoading("正在提交本月排休，完成後會鎖定...");
+      try {
+        await scheduleSaveQueue.catch(function() {}); // 避免自動儲存先後覆蓋
+        // 重新取得最新的選擇；明確傳送完整月份快照（而非只有修改日期）
+        dates = skipSchedule ? [] : getSelectedScheduleDays(acc.username, ym);
+        var url = gasUrl + "?token=" + encodeURIComponent(v6SessionToken) + "&action=submitLeave&username=" + encodeURIComponent(acc.username)
+          + "&yearMonth=" + ym + "&leaveData=" + encodeURIComponent(JSON.stringify(dates)) + (skipSchedule ? "&noSchedule=1" : "");
+        var response = await fetch(url);
+        var res = await response.json();
+        hideLoading();
+        if (res.result === "success") {
+          delete pendingScheduleDrafts[scheduleKey(acc.username, ym)];
+          persistPendingScheduleDrafts();
+          allLeaveDrafts = allLeaveDrafts.filter(function(d) { return !(d.username === acc.username && d.yearMonth === ym); });
+          acc.submittedLeaveMonths = res.submittedLeaveMonths;
+          if (currentUser.username === acc.username) currentUser.submittedLeaveMonths = res.submittedLeaveMonths;
+          isOffDayModeActive = false;
+          refreshView();
+          showCustomAlert("排休已完成並鎖定", res.message, "success");
+          fetchSpreadsheetData(true);
+        } else {
+          showCustomAlert("提交失敗", res.message || "伺服器拒絕提交", "error");
+          if (res.result === "locked") fetchSpreadsheetData(true);
+        }
+      } catch (err) {
+        hideLoading(); showCustomAlert("連線失敗", "無法確認本月是否成功提交，請同步雲端資料後再試，避免重複操作。", "error");
+      }
+    }
+
+    function openForgetClockModal(preselectedDate) {
+      document.getElementById("forgetClockModal").classList.remove("hidden");
+      var today = new Date().toLocaleDateString('sv-SE', {timeZone:'Asia/Taipei'});
+      document.getElementById("fcDate").value = /^\d{4}-\d{2}-\d{2}$/.test(String(preselectedDate || '')) ? preselectedDate : today;
+      var r=allAttendance.find(function(x){return x.username===currentUser.username && normalizeDate(x.date)===document.getElementById("fcDate").value;});
+      document.getElementById('fcType').value = r && r.clockIn && !r.clockOut ? 'clockOut' : 'clockIn';
+    }
+
+    function closeForgetClockModal() {
+      document.getElementById("forgetClockModal").classList.add("hidden");
+    }
+
+    function submitForgetClock() {
+      var dateStr = document.getElementById("fcDate").value;
+      var type = document.getElementById("fcType").value;
+      var timeStr = document.getElementById("fcTime").value;
+      var reason = document.getElementById("fcReason").value.trim();
+
+      if (!dateStr || !timeStr || !reason) {
+        showCustomAlert("提示", "請填寫完整日期、時間與事由", "warning");
+        return;
+      }
+
+      closeForgetClockModal();
+      showLoading("送出補打卡申請中...");
+
+      var targetAcc = allAccounts.find(a => a.username === viewTargetUsername) || currentUser;
+      fetch(`${gasUrl}?token=${encodeURIComponent(v6SessionToken)}&action=applyForgetClock&username=${encodeURIComponent(targetAcc.username)}&date=${dateStr}&type=${type}&time=${timeStr}&reason=${encodeURIComponent(reason)}`)
+        .then(res => res.json())
+        .then(res => {
+          hideLoading();
+          if (res.result === "success") {
+            showCustomAlert("成功", res.message, "success");
+            fetchSpreadsheetData(false);
+          } else {
+            showCustomAlert("錯誤", res.message, "error");
+          }
+        })
+        .catch(err => {
+          hideLoading();
+          showCustomAlert("錯誤", "送出申請失敗", "error");
+        });
+    }
+
+    var openedDayDetailDate="";
+    function escapeDayText(value) {
+      return String(value==null ? "" : value).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});
+    }
+    function openDayDetail(dateStr) {
+      openedDayDetailDate=dateStr;
+      var username=viewTargetUsername||currentUser.username;
+      var rec=allAttendance.find(function(r){return r.username===username && normalizeDate(r.date)===dateStr;});
+      var status=rec?(rec.status||"正常"):"無紀錄";
+      document.getElementById("dayDetailTitle").innerText=dateStr+" 考勤明細";
+      document.getElementById("dayDetailBody").innerHTML=
+        `<div><b>考勤狀態：</b>${escapeDayText(status)}</div>`+
+        `<div><b>上班：</b>${escapeDayText(rec&&rec.clockIn||"未打卡")}</div>`+
+        `<div><b>下班：</b>${escapeDayText(rec&&rec.clockOut||"未打卡")}</div>`+
+        `<div><b>請假時數：</b>${escapeDayText(rec&&rec.leaveHours||0)} 小時</div>`+
+        `<div><b>備註：</b>${escapeDayText(rec&&rec.notes||"無")}</div>`;
+      var past=dateStr < new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Taipei'});
+      var hasMissing=past && (!rec || !rec.clockIn || !rec.clockOut) &&
+        !(/假|排休|補打卡|曠工/.test(String(status)));
+      // 固定週休、國定假日不當成無紀錄缺卡；輪休仍須人工核對
+      var account=allAccounts.find(function(a){return a.username===username;})||currentUser;
+      var dparts=dateStr.split('-').map(Number), weekDay=new Date(dparts[0],dparts[1]-1,dparts[2]).getDay();
+      if(parseInt(account.monthlyOffDays||0,10)===0 && (weekDay===0||weekDay===6||allHolidays.some(function(h){return normalizeDate(h.date)===dateStr;}))) hasMissing=false;
+      if(hasMissing) document.getElementById('dayDetailBody').innerHTML +=
+        '<div class="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 font-bold text-amber-900">⚠ 此日缺少打卡紀錄，尚未自動認定曠工；可申請補卡。</div>';
+      document.getElementById('v65ForgetAction').classList.toggle('hidden',username!==currentUser.username || !hasMissing);
+      document.getElementById("dayDetailNotes").value=rec&&rec.notes||"";
+      var canEdit=username===currentUser.username || String(currentUser.role).toLowerCase()==="admin";
+      document.getElementById("dayDetailNotes").disabled=!canEdit;
+      document.getElementById("dayDetailSaveBtn").classList.toggle("hidden",!canEdit);
+      // V6.4：先選擇動作，再顯示對應表單；不再把管理按鈕附在備註 textarea 後。
+      document.getElementById('v64DayNoteEditor').classList.add('hidden');
+      document.getElementById('v64NoteAction').classList.toggle('hidden',!canEdit);
+      document.getElementById('v64LeaveAction').classList.toggle('hidden',username!==currentUser.username);
+      var bonusButton=document.getElementById('v6DayBonusBtn');
+      bonusButton.classList.toggle('hidden',!v6IsAdmin());
+      bonusButton.onclick=function(){closeDayDetail();v61OpenQuick(dateStr);};
+      var absBtn=document.getElementById('v623AbsenceBtn');
+      var hasAbsence=status.indexOf('曠工')>=0;
+      var datePast=dateStr<new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Taipei'});
+      absBtn.classList.toggle('hidden',!v6IsAdmin()||!datePast);
+      absBtn.innerHTML=hasAbsence?'<i class="fa-solid fa-rotate-left"></i> 取消曠工':'<i class="fa-solid fa-user-xmark"></i> 核定曠工';
+      absBtn.onclick=function(){v623SetAbsence(hasAbsence?'revoke':'confirm');};
+      document.getElementById("dayDetailModal").classList.remove("hidden");
+    }
+    function v65OpenForgetForDay(){
+      if((viewTargetUsername||currentUser.username)!==currentUser.username){showCustomAlert('權限不足','只能申請自己的補打卡','warning');return;}
+      var d=openedDayDetailDate;
+      closeDayDetail();
+      openForgetClockModal(d);
+    }
+    function v64OpenLeaveForDay(){
+      if((viewTargetUsername||currentUser.username)!==currentUser.username){showCustomAlert('權限限制','請假申請僅限本人，請切換到自己的月曆。','warning');return;}
+      var selected=openedDayDetailDate;
+      closeDayDetail();
+      openSingleLeaveModal(selected);
+    }
+    function v64ShowDayNote(){
+      var editor=document.getElementById('v64DayNoteEditor');
+      editor.classList.remove('hidden');
+      document.getElementById('dayDetailNotes').focus();
+    }
+    async function v623SetAbsence(mode){
+      var user=viewTargetUsername||currentUser.username;
+      var msg=mode==='confirm'?'確認 '+openedDayDetailDate+' 為曠工並計入一日扣薪？請先核對排班、請假與補卡資料。':'取消 '+openedDayDetailDate+' 的曠工紀錄？';
+      if(!confirm(msg))return;
+      showLoading('更新曠工核定紀錄...');
+      try{
+        await v6Call('action=setAbsenceStatus&username='+encodeURIComponent(user)+'&date='+encodeURIComponent(openedDayDetailDate)+'&mode='+mode);
+        closeDayDetail();await fetchSpreadsheetData(false);
+        showCustomAlert('更新成功','曠工核定狀態已更新，重新產生薪資報表即可看到扣薪。','success');
+      }catch(e){showCustomAlert('更新失敗',e.message||String(e),'error');}
+      finally{hideLoading();}
+    }
+    function closeDayDetail(){document.getElementById("dayDetailModal").classList.add("hidden");}
+    function saveDayDetailNote() {
+      var username=viewTargetUsername||currentUser.username;
+      var notes=document.getElementById("dayDetailNotes").value;
+      showLoading("儲存當日備註...");
+      fetch(`${gasUrl}?token=${encodeURIComponent(v6SessionToken)}&action=saveDayNote&username=${encodeURIComponent(username)}&date=${encodeURIComponent(openedDayDetailDate)}&notes=${encodeURIComponent(notes)}`)
+        .then(function(r){return r.json();}).then(function(r){hideLoading();if(r.result!=="success")throw new Error(r.message||"儲存失敗");closeDayDetail();fetchSpreadsheetData(false);showCustomAlert("儲存成功",r.message||"備註已更新","success");})
+        .catch(function(err){hideLoading();showCustomAlert("儲存失敗",String(err.message||err),"error");});
+    }
+
+    function updateSingleLeaveUnit() {
+      var special=document.getElementById("slType").value === "特休";
+      document.getElementById("slSpecialHoursBox").classList.toggle("hidden",!special);
+      document.getElementById("slFullDayBox").classList.toggle("hidden",special);
+      if(!special) document.getElementById("slHours").value="8";
+    }
+
+    function openSingleLeaveModal(preselectedDate) {
+      document.getElementById("singleLeaveModal").classList.remove("hidden");
+      updateSingleLeaveUnit();
+      var now = new Date();
+      var monthDate = activeTab === 'summary' ? currentMonthDate : now;
+      var day = (monthDate.getMonth() === now.getMonth() && monthDate.getFullYear() === now.getFullYear()) ? now.getDate() : 1;
+      document.getElementById("slDate").value = /^\d{4}-\d{2}-\d{2}$/.test(String(preselectedDate||'')) ? preselectedDate : monthDate.getFullYear()+'-'+String(monthDate.getMonth()+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    }
+
+    function closeSingleLeaveModal() {
+      document.getElementById("singleLeaveModal").classList.add("hidden");
+    }
+
+    function submitSingleLeave() {
+      var dateStr = document.getElementById("slDate").value;
+      var type = document.getElementById("slType").value;
+      var hours = type === "特休" ? Number(document.getElementById("slHours").value) : 8;
+      var notes = document.getElementById("slNotes").value;
+
+      if (!dateStr) {
+        showCustomAlert("提示", "請選擇日期", "warning");
+        return;
+      }
+
+      if(type === "特休" && !(hours >= 0.5 && hours <= 8 && hours * 2 === Math.floor(hours * 2))) {
+        showCustomAlert("時數錯誤", "特休請輸入 0.5～8 小時，並以半小時為單位", "warning");
+        return;
+      }
+      closeSingleLeaveModal();
+      showLoading("儲存請假中...");
+
+      var targetAcc = allAccounts.find(a => a.username === viewTargetUsername) || currentUser;
+      fetch(`${gasUrl}?token=${encodeURIComponent(v6SessionToken)}&action=saveSingleLeave&username=${encodeURIComponent(targetAcc.username)}&date=${dateStr}&leaveType=${encodeURIComponent(type)}&leaveHours=${hours}&notes=${encodeURIComponent(notes)}`)
+        .then(res => res.json())
+        .then(res => {
+          hideLoading();
+          if (res.result === "success") {
+            showCustomAlert("成功", res.message, "success");
+            fetchSpreadsheetData(false);
+          } else {
+            showCustomAlert("錯誤", res.message, "error");
+          }
+        })
+        .catch(err => {
+          hideLoading();
+          showCustomAlert("錯誤", "儲存單日請假失敗", "error");
+        });
+    }
+
+    function normalizeDate(dateInput) {
+      if (!dateInput) return "";
+      var d = new Date(dateInput);
+      if (isNaN(d.getTime())) {
+        return String(dateInput).substring(0, 10);
+      }
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    function showLoading(text) {
+      document.getElementById("loadingText").innerText = text || "處理中...";
+      document.getElementById("loadingOverlay").classList.remove("hidden");
+    }
+
+    function hideLoading() {
+      document.getElementById("loadingOverlay").classList.add("hidden");
+    }
+
+    function showCustomAlert(title, message, type) {
+      var icon = document.getElementById("alertIcon");
+      if (type === "success") {
+        icon.className = "w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 text-3xl";
+        icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+      } else if (type === "error") {
+        icon.className = "w-16 h-16 mx-auto rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4 text-3xl";
+        icon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+      } else {
+        icon.className = "w-16 h-16 mx-auto rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-4 text-3xl";
+        icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+      }
+      document.getElementById("alertTitle").innerText = title;
+      document.getElementById("alertMessage").innerText = message;
+      document.getElementById("customAlert").classList.remove("hidden");
+    }
+
+    function closeCustomAlert() {
+      document.getElementById("customAlert").classList.add("hidden");
+    }
+
+    function openAppleGuideModal() {
+      var modal = document.getElementById("appleGuideModal");
+      var content = document.getElementById("appleGuideContent");
+      modal.classList.remove("hidden");
+      setTimeout(() => {
+        modal.classList.remove("opacity-0");
+        content.classList.remove("scale-95");
+        content.classList.add("scale-100");
+      }, 10);
+    }
+
+    function closeAppleGuideModal() {
+      var modal = document.getElementById("appleGuideModal");
+      var content = document.getElementById("appleGuideContent");
+      modal.classList.add("opacity-0");
+      content.classList.remove("scale-100");
+      content.classList.add("scale-95");
+      setTimeout(() => {
+        modal.classList.add("hidden");
+      }, 300);
+    }
+  </script>
+</body>
+</html>
