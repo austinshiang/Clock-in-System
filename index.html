@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>雲端考勤・排休管理 V6.2.5</title>
+  <title>雲端考勤・排休管理 V6</title>
   <meta name="theme-color" content="#4f46e5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -83,7 +83,7 @@
         <i class="fa-solid fa-fingerprint text-3xl text-indigo-600"></i>
       </div>
       <h2 class="text-2xl font-black text-slate-800 mb-2 tracking-tight">系統登入</h2>
-      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤與薪資管理 V6.2.5</p>
+      <p class="text-sm text-slate-500 mb-8 font-medium">LINE & 雲端考勤與薪資管理 V5.2</p>
       
       <div class="space-y-4">
         <div class="relative">
@@ -98,6 +98,7 @@
           </div>
           <input type="password" id="loginPassword" placeholder="輸入密碼" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 block pl-10 p-3.5 transition" onkeypress="if(event.key === 'Enter') handleLogin()">
         </div>
+        <label class="flex items-center gap-2 text-xs text-slate-600 font-semibold cursor-pointer"><input id="rememberDevice" type="checkbox" checked class="accent-indigo-600 w-4 h-4"> 記住此裝置（30 天免重新輸入密碼）</label>
         <button onclick="handleLogin()" class="w-full text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-bold rounded-xl text-sm px-5 py-3.5 text-center transition shadow-lg shadow-indigo-500/30 active:scale-[0.98]">
           安全登入 <i class="fa-solid fa-arrow-right-to-bracket ml-1"></i>
         </button>
@@ -205,9 +206,6 @@
         </div>
 
         <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-2">
-          <button onclick="openSingleLeaveModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-xl font-bold text-sm transition shadow-sm border border-slate-200 flex justify-center items-center gap-2">
-            <i class="fa-solid fa-file-signature text-indigo-500"></i> 單日請假 / 特休申請
-          </button>
           <button onclick="openForgetClockModal()" class="flex-1 bg-amber-50 hover:bg-amber-100 text-amber-700 p-3 rounded-xl font-bold text-sm transition shadow-sm border border-amber-200 flex justify-center items-center gap-2">
             <i class="fa-solid fa-clock-rotate-left text-amber-500"></i> 忘刷補打卡申請
           </button>
@@ -287,16 +285,17 @@
       </div>
 
       <!-- 月末薪資結算按鈕區 -->
-      <div class="flex justify-end">
-        <button onclick="openPayrollModal()" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold px-5 py-2.5 rounded-2xl shadow-lg transition flex items-center gap-2 text-sm active:scale-95">
-          <i class="fa-solid fa-file-invoice-dollar text-base"></i> 產生月末薪資結算報表
+      <div class="grid grid-cols-2 gap-2 sm:flex sm:justify-end sm:items-center">
+        <button onclick="openSingleLeaveModal()" class="min-w-0 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 px-2.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition flex justify-center items-center gap-1.5"><i class="fa-solid fa-file-signature"></i><span>請假／特休</span></button>
+        <button onclick="openPayrollModal()" class="min-w-0 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold px-2.5 sm:px-5 py-2.5 rounded-xl sm:rounded-2xl shadow-lg transition flex justify-center items-center gap-1.5 text-xs sm:text-sm active:scale-95">
+          <i class="fa-solid fa-file-invoice-dollar"></i> <span class="sm:hidden">薪資報表</span><span class="hidden sm:inline">產生月末薪資結算報表</span>
         </button>
       </div>
 
       <!-- 月曆與排班系統 -->
-      <div class="glass-panel rounded-3xl p-4 sm:p-6 shadow-sm">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4 mb-4">
-          <div class="flex items-center gap-3">
+      <div class="glass-panel rounded-3xl p-2.5 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+        <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 sm:gap-4 border-b border-slate-100 pb-3 mb-3">
+          <div class="flex items-center justify-center sm:justify-start gap-3">
             <button onclick="changeMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-600 transition">
               <i class="fa-solid fa-chevron-left text-sm"></i>
             </button>
@@ -307,13 +306,13 @@
           </div>
 
           <!-- 排班模式開關與防呆動態計數器 -->
-          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-            <button id="btnToggleShiftMode" onclick="toggleOffDayMode()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm">
+          <div class="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto min-w-0">
+            <button id="btnToggleShiftMode" onclick="toggleOffDayMode()" class="min-w-0 w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-2 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex justify-center items-center gap-1.5 shadow-sm">
               <i class="fa-solid fa-calendar-check"></i> <span id="txtShiftModeBtnLabel">開啟排休模式</span>
             </button>
 
-            <div id="adminUserSelector" class="hidden">
-              <select id="selEmployee" onchange="switchEmployeeView()" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl focus:ring-4 focus:ring-indigo-500/25 block p-2">
+            <div id="adminUserSelector" class="hidden min-w-0 w-full sm:w-auto">
+              <select id="selEmployee" onchange="switchEmployeeView()" class="w-full max-w-full sm:max-w-[190px] min-w-0 bg-slate-50 border border-slate-200 text-slate-700 text-[11px] sm:text-sm font-bold rounded-xl focus:ring-4 focus:ring-indigo-500/25 block p-2 truncate">
               </select>
             </div>
           </div>
@@ -435,7 +434,7 @@
   <div id="payrollModal" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm px-2 sm:px-4">
     <div class="bg-white rounded-3xl w-full max-w-3xl max-h-[94vh] flex flex-col shadow-2xl border border-slate-200">
       <div class="px-5 py-4 border-b flex justify-between items-center gap-3">
-        <div><h3 class="font-black text-lg">V6.2.3 月度薪資結算</h3><p id="payrollMonthTitle" class="text-xs text-slate-500"></p></div>
+        <div><h3 class="font-black text-lg">V6.4 月度薪資結算</h3><p id="payrollMonthTitle" class="text-xs text-slate-500"></p></div>
         <button onclick="closePayrollModal()" class="bg-slate-100 rounded-full w-9 h-9 text-slate-600" title="關閉"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="px-5 py-4 overflow-y-auto flex-1 space-y-4">
@@ -562,8 +561,20 @@
     <div class="glass-panel bg-white p-5 sm:p-6 rounded-3xl w-full max-w-md shadow-2xl space-y-4">
       <div class="flex items-center justify-between"><h3 id="dayDetailTitle" class="text-lg font-black">日期明細</h3><button onclick="closeDayDetail()" class="rounded-full bg-slate-100 px-3 py-1.5 text-slate-600">✕</button></div>
       <div id="dayDetailBody" class="text-sm bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2"></div>
-      <div><label class="block font-bold text-sm mb-2">當日備註（可新增或修改）</label><textarea id="dayDetailNotes" rows="3" maxlength="2000" class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm" placeholder="輸入當日備註..."></textarea></div>
-      <button id="dayDetailSaveBtn" onclick="saveDayDetailNote()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl py-3">儲存備註至資料庫</button>
+      <div id="v64DayActions" class="space-y-2">
+        <div class="text-sm font-extrabold text-slate-700">選擇當日操作</div>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="v64LeaveAction" type="button" onclick="v64OpenLeaveForDay()" class="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white px-3 py-3 text-sm font-bold"><i class="fa-solid fa-file-signature"></i> 請假</button>
+          <button id="v64NoteAction" type="button" onclick="v64ShowDayNote()" class="flex items-center justify-center gap-2 rounded-xl bg-slate-100 text-slate-800 px-3 py-3 text-sm font-bold"><i class="fa-solid fa-pen-to-square"></i> 備註</button>
+          <button id="v6DayBonusBtn" type="button" class="hidden flex items-center justify-center gap-2 rounded-xl bg-amber-100 text-amber-900 px-3 py-3 text-sm font-bold"><i class="fa-solid fa-gift"></i> 發放獎金</button>
+          <button id="v623AbsenceBtn" type="button" class="hidden flex items-center justify-center gap-2 rounded-xl bg-rose-100 text-rose-800 px-3 py-3 text-sm font-bold"><i class="fa-solid fa-user-xmark"></i> 核定曠工</button>
+        </div>
+      </div>
+      <div id="v64DayNoteEditor" class="hidden space-y-2 border-t border-slate-200 pt-3">
+        <label class="block font-bold text-sm" for="dayDetailNotes">當日備註（可新增或修改）</label>
+        <textarea id="dayDetailNotes" rows="3" maxlength="2000" class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm" placeholder="輸入當日備註..."></textarea>
+        <button id="dayDetailSaveBtn" onclick="saveDayDetailNote()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl py-3">儲存備註至 Google 試算表</button>
+      </div>
     </div>
   </div>
   <div id="singleLeaveModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
@@ -679,9 +690,8 @@
       document.getElementById("txtCurrentDateDisplay").innerText = 
         `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-      // V6 不再信任本機快取作為登入憑證：重新整理後需重新登入。
-      sessionStorage.removeItem('att_v6_token');
-      localStorage.removeItem(CACHE_KEY_USER);
+      // 僅儲存隨機登入憑證；進入打卡頁前一定先向伺服器驗證。
+      v63RestoreLogin();
     };
 
     function initInteractiveMap() {
@@ -903,7 +913,14 @@
           hideLoading();
           if (res.result === "success") {
             showCustomAlert("打卡成功", res.message, "success");
-            fetchSpreadsheetData(false);
+            // 快速模式：不為了更新兩個按鈕重新下載整站考勤表。
+            var now=new Date();
+            var dateKey=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
+            var timeKey=res.time||String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+            var rec=allAttendance.find(function(x){return x.username===currentUser.username&&x.date===dateKey;});
+            if(!rec){rec={username:currentUser.username,date:dateKey,clockIn:'',clockOut:'',status:'正常'};allAttendance.push(rec);}
+            rec[type]=timeKey;
+            updateClockButtonsState();
           } else {
             showCustomAlert("打卡失敗", res.message || "未知錯誤", "error");
           }
@@ -942,6 +959,9 @@
         btnS.className = "nav-tab-active px-5 py-2 rounded-xl transition flex items-center gap-2 text-sm";
         mNavD.className = "flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-600 font-medium text-[11px] space-y-1 transition";
         mNavS.className = "flex flex-col items-center justify-center w-full h-full text-indigo-600 font-bold text-[11px] space-y-1 transition";
+        if(!v63FullDataLoaded) {
+          v63EnsureFullData().catch(function(e){console.warn('月曆資料載入失敗',e);});
+        }
       }
     }
 
@@ -1182,14 +1202,18 @@
               clearTimeout(scheduleAutoSaveTimer);
               scheduleAutoSaveTimer = setTimeout(function() { saveCurrentScheduleDraft(); }, 500);
             }
-            if (!isSilent) showCustomAlert("同步成功", "已成功從 資料庫 雲端載入最新考勤紀錄！", "success");
+            if (!isSilent) showCustomAlert("同步成功", "已成功從 Google 雲端載入最新考勤紀錄！", "success");
+            v63FullDataLoaded=true;
+            return true;
           } else {
             showCustomAlert("同步失敗", data.message || "伺服器異常", "error");
+            return false;
           }
         })
         .catch(err => {
           hideLoading();
           showCustomAlert("連線失敗", "無法與 Google Apps Script 建立連線，請檢查網路。", "error");
+          return false;
         });
     }
 
@@ -1212,36 +1236,79 @@
       return false;
     }
 
+    function v63ActivateQuick(user, token, today) {
+      if (!user || !user.username || !user.gpsLocations) {
+        // 未設定座標時仍可進入頁面，但以原有預設點規則運作。
+        if (!user || !user.username) throw Error("無法取得登入帳號");
+      }
+      v6SessionToken=token;
+      currentUser=user;
+      viewTargetUsername=user.username;
+      v63SessionReady=true;
+      v63FullDataLoaded=false;
+      allAttendance=today?[today]:[];
+      document.getElementById('loginOverlay').classList.add('hidden');
+      document.getElementById('mainApp').classList.remove('hidden');
+      initUserSession();
+      updateClockButtonsState();
+      switchTab('daily');
+      // 不等待全站資料：GPS 驗證獨立執行。
+    }
+    async function v63RestoreLogin() {
+      var savedToken=localStorage.getItem(V63_REMEMBER_KEY);
+      if(!savedToken)return;
+      showLoading('正在確認此裝置登入狀態...');
+      try {
+        var r=await fetch(gasUrl+'?action=quickProfile&token='+encodeURIComponent(savedToken),{cache:'no-store'});
+        var d=await r.json();
+        if(d.result!=='success')throw Error(d.message||'登入已過期');
+        v63ActivateQuick(d.user,savedToken,d.today);
+      } catch(e) {
+        localStorage.removeItem(V63_REMEMBER_KEY);
+        v6SessionToken='';currentUser=null;
+        document.getElementById('loginOverlay').classList.remove('hidden');
+      } finally {hideLoading();}
+    }
     async function handleLogin() {
       var u=document.getElementById('loginUsername').value.trim(),p=document.getElementById('loginPassword').value;
       if(!u||!p){showCustomAlert('提示','請輸入帳號密碼','warning');return;}
-      showLoading('透過後端驗證登入...');
-      try{
-        var r=await fetch(gasUrl,{method:'POST',body:new URLSearchParams({action:'login',username:u,password:p})});
-        var data=await r.json();if(data.result!=='success')throw Error(data.message||'登入失敗');
-        v6SessionToken=data.token;currentUser=data.user;viewTargetUsername=currentUser.username;
+      showLoading('正在驗證並準備 GPS 打卡...');
+      try {
+        var remember=document.getElementById('rememberDevice').checked;
+        var r=await fetch(gasUrl,{method:'POST',body:new URLSearchParams({action:'login',username:u,password:p,rememberDevice:String(remember)})});
+        var d=await r.json();if(d.result!=='success')throw Error(d.message||'登入失敗');
+        if(remember)localStorage.setItem(V63_REMEMBER_KEY,d.token);
+        else localStorage.removeItem(V63_REMEMBER_KEY);
         document.getElementById('loginPassword').value='';
-        document.getElementById('loginOverlay').classList.add('hidden');
-        document.getElementById('mainApp').classList.remove('hidden');
-        initUserSession();await fetchSpreadsheetData(true);
-      }catch(err){showCustomAlert('登入失敗',err.message||String(err),'error');}
-      finally{hideLoading();}
+        v63ActivateQuick(d.user,d.token,d.today);
+      } catch(e) {showCustomAlert('登入失敗',e.message||String(e),'error');}
+      finally {hideLoading();}
     }
-
+    async function v63EnsureFullData() {
+      if(v63FullDataLoaded)return;
+      if(v63FullDataPromise)return v63FullDataPromise;
+      v63FullDataPromise=fetchSpreadsheetData(true).then(function(ok){
+        if(ok===false)throw Error('資料尚未完整載入，請再試一次');
+        v63FullDataLoaded=true;
+      }).finally(function(){v63FullDataPromise=null;});
+      return v63FullDataPromise;
+    }
     function logout() {
       if (isCurrentDraftDirty()) {
-        flushScheduleBeforeNavigation(function() { logout(); });
-        return;
+        flushScheduleBeforeNavigation(function() { logout(); });return;
       }
+      var oldToken=v6SessionToken;
+      localStorage.removeItem(V63_REMEMBER_KEY);
       localStorage.removeItem(CACHE_KEY_USER);
-      v6SessionToken="";
-      [CACHE_KEY_ACCOUNTS,CACHE_KEY_ATTENDANCE,CACHE_KEY_LEAVE_DRAFTS,CACHE_KEY_FORGET_CLOCK].forEach(function(key){localStorage.removeItem(key);});
-      currentUser = null;
-      isOffDayModeActive = false;
-      document.getElementById("mainApp").classList.add("hidden");
-      document.getElementById("loginOverlay").classList.remove("hidden");
-      document.getElementById("loginUsername").value = "";
-      document.getElementById("loginPassword").value = "";
+      [CACHE_KEY_ACCOUNTS,CACHE_KEY_ATTENDANCE,CACHE_KEY_LEAVE_DRAFTS,CACHE_KEY_FORGET_CLOCK].forEach(function(k){localStorage.removeItem(k);});
+      v6SessionToken='';currentUser=null;v63SessionReady=false;v63FullDataLoaded=false;v63FullDataPromise=null;
+      allAccounts=[];allAttendance=[];allHolidays=[];allLeaveDrafts=[];forgetClockRequests=[];
+      isOffDayModeActive=false;
+      document.getElementById('mainApp').classList.add('hidden');
+      document.getElementById('loginOverlay').classList.remove('hidden');
+      document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';
+      // 非同步撤銷伺服器端憑證；本機先即時退出。
+      if(oldToken)fetch(gasUrl+'?action=logoutDevice&token='+encodeURIComponent(oldToken),{keepalive:true}).catch(function(){});
     }
 
     function populateEmployeeDropdown() {
@@ -1467,7 +1534,7 @@
         + "&yearMonth=" + encodeURIComponent(ym) + "&leaveData=" + encodeURIComponent(JSON.stringify(dates));
       scheduleSaveQueue = scheduleSaveQueue.catch(function() {}).then(function() {
         scheduleSaving = true;
-        setScheduleStatus("↻ 正在上傳 資料庫...", "pending");
+        setScheduleStatus("↻ 正在上傳 Google 試算表...", "pending");
         return fetch(url).then(function(res) { return res.json(); }).then(function(res) {
           if (res.result === "locked") {
             throw new Error("該月份已由其他裝置提交鎖定，請重新同步");
@@ -1498,7 +1565,7 @@
     function flushScheduleBeforeNavigation(onSuccess) {
       clearTimeout(scheduleAutoSaveTimer);
       if (!isCurrentDraftDirty()) { onSuccess(); return; }
-      showLoading("正在自動儲存排休草稿至 資料庫...");
+      showLoading("正在自動儲存排休草稿至 Google 試算表...");
       saveCurrentScheduleDraft().then(function(ok) {
         hideLoading();
         if (ok && !isCurrentDraftDirty()) onSuccess();
@@ -1701,7 +1768,7 @@
 
         var lockedMonth = isScheduleLocked(targetAcc.username, scheduleYearMonth());
         cell.className = `calendar-day-interactive flex flex-col justify-between p-1 sm:p-2 rounded-2xl border ${bgClass} min-h-[5.5rem] sm:min-h-[7rem] shadow-sm transition hover:shadow-md relative overflow-hidden ${lockedMonth ? "cursor-default" : ""}`;
-        cell.title = isOffDayModeActive ? (lockedMonth ? "本月排休已鎖定" : (currentStatus === "排休" ? "取消排休" : "設定排休")) : "查看打卡狀態、備註與新增備註";
+        cell.title = isOffDayModeActive ? (lockedMonth ? "本月排休已鎖定" : (currentStatus === "排休" ? "取消排休" : "設定排休")) : "點選日期：查看明細、請假、備註或管理員操作";
         cell.setAttribute("onclick", `handleCalendarCellClick('${dateStr}')`);
         cell.innerHTML = `
           <div class="flex justify-between items-center">
@@ -1833,6 +1900,10 @@
 
     var v6PayrollData=null;
     var v6SessionToken="";
+    var V63_REMEMBER_KEY="att_v63_remember_device";
+    var v63FullDataLoaded=false;
+    var v63FullDataPromise=null;
+    var v63SessionReady=false;
     function v6ApiUrl(query){return gasUrl+"?"+query+"&token="+encodeURIComponent(v6SessionToken);}
     async function v6Call(query){var r=await fetch(v6ApiUrl(query),{cache:"no-store"});var d=await r.json();if(d.result!=="success")throw Error(d.message||"API 失敗");return d;}
     function v6Esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
@@ -1866,6 +1937,12 @@
         if(v6IsAdmin()&&!document.getElementById('v6BonusEditor').classList.contains('hidden'))v6RefreshBonuses();
       }catch(e){document.getElementById('v6PayrollResult').textContent='無法產生：'+e.message;}
     }
+    function v64MissingClockAlert(count,printed){
+      if(!count)return '';
+      var message='有 '+count+' 天缺少打卡或請假紀錄，未直接視為曠工扣薪，需管理員核對。';
+      return printed ? '<div class="missing-alert"><b>⚠ 出勤資料待核對（'+count+' 天）</b><p>'+v6Esc(message)+'</p></div>' :
+        '<div role="alert" class="mt-4 p-4 sm:p-5 rounded-2xl border-2 border-rose-500 bg-rose-50 text-rose-900 shadow-sm"><div class="flex items-center gap-2 text-base sm:text-lg font-black"><i class="fa-solid fa-triangle-exclamation"></i> 出勤資料待核對（'+count+' 天）</div><p class="mt-2 font-extrabold text-sm sm:text-base leading-relaxed">'+v6Esc(message)+'</p></div>';
+    }
     function v6RenderPayroll(data){
       var root=document.getElementById('v6PayrollResult');
       if(data.scope==='all'){
@@ -1873,7 +1950,7 @@
         var markup='<div class="overflow-x-auto"><table class="w-full text-xs text-right"><thead><tr class="bg-slate-100"><th class="p-2 text-left">員工</th><th class="p-2">本薪</th><th class="p-2">獎金＋補貼</th><th class="p-2">員工保費等</th><th class="p-2">實領</th><th class="p-2">公司總成本</th></tr></thead><tbody>';
         reports.forEach(function(r){totalNet+=r.netSalary;totalCost+=r.employerCost;markup+='<tr class="border-b"><td class="p-2 text-left">'+v6Esc(r.name)+'</td><td class="p-2">'+v6Money(r.baseSalary)+'</td><td class="p-2">'+v6Money(r.fixedAllowances+r.variableBonuses)+'</td><td class="p-2">'+v6Money(r.insurance.employee)+'</td><td class="p-2 font-bold">'+v6Money(r.netSalary)+'</td><td class="p-2">'+v6Money(r.employerCost)+'</td></tr>';});
         markup+='</tbody><tfoot><tr class="font-black bg-indigo-50"><td class="p-2">總計</td><td colspan="3"></td><td class="p-2">'+v6Money(totalNet)+'</td><td class="p-2">'+v6Money(totalCost)+'</td></tr></tfoot></table></div>';
-        markup+='<p class="text-xs text-amber-700 mt-3">公司成本＝應發薪資＋雇主保費及勞退提繳；不包含未核定額外成本。</p>';
+        var pending=reports.filter(function(r){return (r.missingClockDays||[]).length;});if(pending.length){var totalMissing=pending.reduce(function(n,r){return n+r.missingClockDays.length;},0);markup+=v64MissingClockAlert(totalMissing,false);markup+='<p class="mt-2 text-sm font-bold text-rose-900">待核對員工：'+pending.map(function(r){return v6Esc(r.name)+'（'+r.missingClockDays.length+' 天）';}).join('、')+'</p>';}markup+='<p class="text-xs text-amber-700 mt-3">公司成本＝應發薪資＋雇主保費及勞退提繳；不包含未核定額外成本。</p>';
         root.innerHTML=markup;return;
       }
       var r=data.report;
@@ -1886,7 +1963,7 @@
       markup+='</tbody></table><div class="font-extrabold text-right pt-3">實領 '+v6Money(r.netSalary)+'</div>';
       if(v6IsAdmin())markup+='<div class="mt-3 p-3 rounded-xl bg-slate-100 text-xs">雇主負擔：'+v6Money(r.insurance.employer)+'；公司總成本：<b>'+v6Money(r.employerCost)+'</b></div>';
       if(r.bonuses&&r.bonuses.length){markup+='<div class="mt-3 text-xs"><b>已計入的獎金／補貼：</b> '+r.bonuses.map(function(x){return v6Esc(x.title)+' '+v6Money(x.amount);}).join('、')+'</div>';}
-      if(r.missingClockDays&&r.missingClockDays.length)markup+='<p class="text-xs text-amber-700 mt-3">有 '+r.missingClockDays.length+' 天缺少打卡或請假紀錄，未直接視為曠工扣薪，需管理員核對。</p>';
+      if(r.missingClockDays&&r.missingClockDays.length)markup+=v64MissingClockAlert(r.missingClockDays.length,false);
       markup+='<p class="text-xs text-slate-500 mt-3">'+(r.warnings||[]).map(v6Esc).join('；')+'</p>';
       root.innerHTML=markup;
     }
@@ -1989,7 +2066,7 @@
       if(r.bonuses&&r.bonuses.length){html+='<div class="extra"><b>本月獎金明細</b>：'+r.bonuses.map(function(b){return v6Esc(b.title)+'（'+v6Money(b.amount)+'）';}).join('、')+'</div>';}
       if(includeCost){html+='<div class="cost"><div><small>雇主負擔保費與勞退</small><strong>'+v6Money(r.insurance.employer)+'</strong></div><div><small>公司本月總人事成本</small><strong>'+v6Money(r.employerCost)+'</strong></div></div>';}
       if((r.warnings||[]).length)html+='<div class="extra">核對事項：'+r.warnings.map(v6Esc).join('；')+'</div>';
-      if((r.missingClockDays||[]).length)html+='<div class="extra">提醒：'+r.missingClockDays.length+' 天有缺卡或缺勤待核對紀錄</div>';
+      if((r.missingClockDays||[]).length)html+=v64MissingClockAlert(r.missingClockDays.length,true);
       return html+'</section>';
     }
     function v6PrintPayroll(){
@@ -2003,11 +2080,11 @@
       if(all)content+='<div class="summary"><div><small>全員實領合計</small><strong>'+v6Money(totalNet)+'</strong></div><div><small>公司人事成本合計</small><strong>'+v6Money(totalCost)+'</strong></div></div>';
       content+=list.map(function(r){return v61PrintPerson(r,v6IsAdmin());}).join('');
       content+='<footer>結算選項：遲到／早退扣薪 '+(document.getElementById('v622IncludeLate').checked?'計入':'不計入')+'；加班費 '+(document.getElementById('v622IncludeOT').checked?'計入':'不計入')+'。依現有資料試算，未納入未核定的所得稅、補充保費及其他調整。正式發薪前請核對出勤、投保金額與獎金性質。</footer>';
-      var style=`@page{size:A4;margin:13mm}*{box-sizing:border-box}body{font-family:system-ui,'Noto Sans TC',sans-serif;color:#172033;background:#fff;margin:0;font-size:12px}.report-title{display:flex;justify-content:space-between;align-items:start;border-bottom:3px solid #303a66;padding-bottom:15px;margin-bottom:18px}.eyebrow{font-weight:800;letter-spacing:2px;color:#61708b;font-size:9px}h1{font-size:24px;margin:4px 0}small{font-size:10px;color:#677489}.logo{background:#303a66;color:white;border-radius:9px;padding:10px;font-weight:bold}.summary,.three,.cost{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.summary{margin-bottom:18px}.summary>div{padding:16px;background:#f0f3ff;border-radius:10px}.summary strong{display:block;font-size:23px;margin-top:6px}.pay-card{border:1px solid #dce2eb;border-radius:13px;overflow:hidden;margin-bottom:18px;break-inside:avoid;page-break-inside:avoid}.person-head{background:#eff4ff;padding:17px;display:flex;justify-content:space-between;align-items:center;gap:12px}.person-head h2{font-size:21px;margin:3px 0}.salary-main{text-align:right}.salary-main div{font-size:29px;font-weight:900;color:#116e53}.salary-main small{display:block}.three{grid-template-columns:repeat(3,1fr);padding:13px;gap:8px}.three>div{border:1px solid #ecedf2;padding:10px;border-radius:8px}.three strong{display:block;font-size:17px;margin-top:6px}.positive{color:#117c5c}.negative{color:#ba3049}.detail-cols{display:grid;grid-template-columns:1fr 1fr;gap:13px;padding:0 13px 12px}.detail{border:1px solid #e7eaf0;border-radius:9px;padding:11px}.detail h3{font-size:12px;margin:0 0 10px}.pr-row{display:flex;justify-content:space-between;gap:5px;border-top:1px dashed #eceff5;padding:7px 0}.pr-row strong{white-space:nowrap}.cost{padding:12px 15px;background:#f3f5fa}.cost strong{display:block;font-size:17px}.extra{padding:8px 15px;color:#4f5e70;font-size:10px}.report-title,.pay-card{print-color-adjust:exact;-webkit-print-color-adjust:exact}footer{font-size:10px;color:#667085;margin-top:18px}`;
+      var style=`@page{size:A4;margin:13mm}*{box-sizing:border-box}body{font-family:system-ui,'Noto Sans TC',sans-serif;color:#172033;background:#fff;margin:0;font-size:12px}.report-title{display:flex;justify-content:space-between;align-items:start;border-bottom:3px solid #303a66;padding-bottom:15px;margin-bottom:18px}.eyebrow{font-weight:800;letter-spacing:2px;color:#61708b;font-size:9px}h1{font-size:24px;margin:4px 0}small{font-size:10px;color:#677489}.logo{background:#303a66;color:white;border-radius:9px;padding:10px;font-weight:bold}.summary,.three,.cost{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.summary{margin-bottom:18px}.summary>div{padding:16px;background:#f0f3ff;border-radius:10px}.summary strong{display:block;font-size:23px;margin-top:6px}.pay-card{border:1px solid #dce2eb;border-radius:13px;overflow:hidden;margin-bottom:18px;break-inside:avoid;page-break-inside:avoid}.person-head{background:#eff4ff;padding:17px;display:flex;justify-content:space-between;align-items:center;gap:12px}.person-head h2{font-size:21px;margin:3px 0}.salary-main{text-align:right}.salary-main div{font-size:29px;font-weight:900;color:#116e53}.salary-main small{display:block}.three{grid-template-columns:repeat(3,1fr);padding:13px;gap:8px}.three>div{border:1px solid #ecedf2;padding:10px;border-radius:8px}.three strong{display:block;font-size:17px;margin-top:6px}.positive{color:#117c5c}.negative{color:#ba3049}.detail-cols{display:grid;grid-template-columns:1fr 1fr;gap:13px;padding:0 13px 12px}.detail{border:1px solid #e7eaf0;border-radius:9px;padding:11px}.detail h3{font-size:12px;margin:0 0 10px}.pr-row{display:flex;justify-content:space-between;gap:5px;border-top:1px dashed #eceff5;padding:7px 0}.pr-row strong{white-space:nowrap}.cost{padding:12px 15px;background:#f3f5fa}.cost strong{display:block;font-size:17px}.extra{padding:8px 15px;color:#4f5e70;font-size:10px}.missing-alert{margin:12px 14px 16px;padding:14px 16px;border:3px solid #b91c1c;background:#fff1f2;color:#881337;border-radius:10px;break-inside:avoid;page-break-inside:avoid}.missing-alert b{font-size:16px;font-weight:900;display:block}.missing-alert p{font-size:13px;font-weight:800;line-height:1.5;margin:7px 0 0}.report-title,.pay-card,.missing-alert{print-color-adjust:exact;-webkit-print-color-adjust:exact}footer{font-size:10px;color:#667085;margin-top:18px}`;
       var w=window.open('','_blank');if(!w){showCustomAlert('無法列印','請允許瀏覽器開啟新視窗','warning');return;}
       w.document.write('<!doctype html><html lang="zh-TW"><head><meta charset="utf-8"><title>'+v6Esc(v6SelectedMonth())+' 薪資明細</title><style>'+style+'</style></head><body>'+content+'</body></html>');w.document.close();w.focus();setTimeout(function(){w.print();},350);
     }
-    function v6ExportPayrollCsv(){if(!v6IsAdmin()||!v6PayrollData||v6PayrollData.scope!=='all')return;var rows=[['月份','員工','本薪','加班費','固定補貼','非固定獎金','缺勤扣薪','員工保費與自提','實領','雇主保費與勞退','公司成本']];v6PayrollData.reports.forEach(function(r){rows.push([r.yearMonth,r.name,r.baseSalary,r.otPay1+r.otPay2,r.fixedAllowances,r.variableBonuses,r.attendanceDeductions,r.insurance.employee,r.netSalary,r.insurance.employer,r.employerCost]);});var csv='\ufeff'+rows.map(function(row){return row.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=v6SelectedMonth()+'_全員薪資與公司成本.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);}
+    function v6ExportPayrollCsv(){if(!v6IsAdmin()||!v6PayrollData||v6PayrollData.scope!=='all')return;var rows=[['⚠ 出勤核對警示','待核對天數','月份','員工','本薪','加班費','固定補貼','非固定獎金','缺勤扣薪','員工保費與自提','實領','雇主保費與勞退','公司成本']];v6PayrollData.reports.forEach(function(r){var missing=(r.missingClockDays||[]).length;rows.push([missing?'⚠ 有 '+missing+' 天缺少打卡或請假紀錄，未直接視為曠工扣薪，需管理員核對。':'無待核對缺卡',missing,r.yearMonth,r.name,r.baseSalary,r.otPay1+r.otPay2,r.fixedAllowances,r.variableBonuses,r.attendanceDeductions,r.insurance.employee,r.netSalary,r.insurance.employer,r.employerCost]);});var csv='\ufeff'+rows.map(function(row){return row.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=v6SelectedMonth()+'_全員薪資與公司成本.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);}
 
     async function submitMonthlyLeave() {
       var acc = targetScheduleAccount();
@@ -2111,18 +2188,31 @@
       var canEdit=username===currentUser.username || String(currentUser.role).toLowerCase()==="admin";
       document.getElementById("dayDetailNotes").disabled=!canEdit;
       document.getElementById("dayDetailSaveBtn").classList.toggle("hidden",!canEdit);
+      // V6.4：先選擇動作，再顯示對應表單；不再把管理按鈕附在備註 textarea 後。
+      document.getElementById('v64DayNoteEditor').classList.add('hidden');
+      document.getElementById('v64NoteAction').classList.toggle('hidden',!canEdit);
+      document.getElementById('v64LeaveAction').classList.toggle('hidden',username!==currentUser.username);
       var bonusButton=document.getElementById('v6DayBonusBtn');
-      if(!bonusButton){bonusButton=document.createElement('button');bonusButton.id='v6DayBonusBtn';bonusButton.className='mt-2 px-4 py-2 bg-amber-100 text-amber-900 text-xs font-bold rounded-xl';bonusButton.textContent='+ 這一天新增獎金／補貼';document.getElementById('dayDetailNotes').parentElement.appendChild(bonusButton);}
       bonusButton.classList.toggle('hidden',!v6IsAdmin());
       bonusButton.onclick=function(){closeDayDetail();v61OpenQuick(dateStr);};
       var absBtn=document.getElementById('v623AbsenceBtn');
-      if(!absBtn){absBtn=document.createElement('button');absBtn.id='v623AbsenceBtn';absBtn.className='mt-2 ml-2 px-4 py-2 bg-rose-100 text-rose-800 text-xs font-bold rounded-xl';bonusButton.parentElement.appendChild(absBtn);}
       var hasAbsence=status.indexOf('曠工')>=0;
       var datePast=dateStr<new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Taipei'});
       absBtn.classList.toggle('hidden',!v6IsAdmin()||!datePast);
-      absBtn.textContent=hasAbsence?'取消曠工核定':'核定曠工（扣薪）';
+      absBtn.innerHTML=hasAbsence?'<i class="fa-solid fa-rotate-left"></i> 取消曠工':'<i class="fa-solid fa-user-xmark"></i> 核定曠工';
       absBtn.onclick=function(){v623SetAbsence(hasAbsence?'revoke':'confirm');};
       document.getElementById("dayDetailModal").classList.remove("hidden");
+    }
+    function v64OpenLeaveForDay(){
+      if((viewTargetUsername||currentUser.username)!==currentUser.username){showCustomAlert('權限限制','請假申請僅限本人，請切換到自己的月曆。','warning');return;}
+      var selected=openedDayDetailDate;
+      closeDayDetail();
+      openSingleLeaveModal(selected);
+    }
+    function v64ShowDayNote(){
+      var editor=document.getElementById('v64DayNoteEditor');
+      editor.classList.remove('hidden');
+      document.getElementById('dayDetailNotes').focus();
     }
     async function v623SetAbsence(mode){
       var user=viewTargetUsername||currentUser.username;
@@ -2153,11 +2243,13 @@
       if(!special) document.getElementById("slHours").value="8";
     }
 
-    function openSingleLeaveModal() {
+    function openSingleLeaveModal(preselectedDate) {
       document.getElementById("singleLeaveModal").classList.remove("hidden");
       updateSingleLeaveUnit();
-      var today = new Date().toISOString().split("T")[0];
-      document.getElementById("slDate").value = today;
+      var now = new Date();
+      var monthDate = activeTab === 'summary' ? currentMonthDate : now;
+      var day = (monthDate.getMonth() === now.getMonth() && monthDate.getFullYear() === now.getFullYear()) ? now.getDate() : 1;
+      document.getElementById("slDate").value = /^\d{4}-\d{2}-\d{2}$/.test(String(preselectedDate||'')) ? preselectedDate : monthDate.getFullYear()+'-'+String(monthDate.getMonth()+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
     }
 
     function closeSingleLeaveModal() {
